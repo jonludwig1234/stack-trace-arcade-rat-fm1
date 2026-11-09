@@ -47,7 +47,7 @@ def main():
         ("Attract Tour Demo, Jukebox Demo Songs & Rewind Time Machine",
          "node tools/test_tour_jukebox_rewind.js"),
         ("Multi-Input Schemes (Keyboard, D-Pad, Knobs, Touch) & HUD Telemetry", 
-         "node tools/test_all_games_input_dispatch.js"),
+         "node tools/test_all_games_input_dispatch.js && node tools/test_all_games_gameplay_audit.js"),
         ("Donkey Kong 1981: 25M Girder Math, Finite Lives & 8035 BGM Rig", 
          "node tools/test_donkey_kong_authentic.js"),
         ("Gyruss 1983: 360° Polar Angle Wrap, Plasma Bullets & Mortal Rig", 
