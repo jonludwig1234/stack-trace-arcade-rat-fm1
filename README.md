@@ -6,6 +6,43 @@ It transforms the pocket FM-1 synth into a full-fledged 80s arcade sound chip la
 
 ---
 
+## 🎬 1080p Video Showcase & Sound Demo
+
+[![Watch ARCADE RAT v1.0 Firmware Showcase Video](web/demo_preview.gif)](https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/fm1_firmware_showcase_demo.mp4)
+
+<div align="center">
+
+### ▶ **[Watch & Download Full 1080p Demo Video (MP4 · 40.8 MB)](https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/fm1_firmware_showcase_demo.mp4)**
+**[Direct Repo Media File (GitHub Player)](web/fm1_firmware_showcase_demo.mp4)** · **[Full Master Audio (24-bit WAV)](https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/commercial_master_audio.wav)** · **[BGM Soundtrack (WAV)](https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/demo_bgm_music.wav)**
+
+</div>
+
+### ⏱️ Video Chapters & Timestamp Guide
+| Timestamp | Chapter | Hardware & Audio Core Demonstrated |
+| :---: | :--- | :--- |
+| **`00:00`** | **Cold Boot & BIOS** | Z80 CPU Cold Boot Sequence & Namco WSG Pac-Man chime |
+| **`00:05`** | **Pac-Man (1980 · Namco)** | Namco 3-voice WSG siren, waka-waka, ghost eyes & fruit fanfare |
+| **`00:10`** | **Galaga (1981 · Namco)** | Dual Z80 bus, high-speed starfield scrolling, alien diving scream & explosive rumble |
+| **`00:16`** | **Donkey Kong (1981 · Nintendo)** | Intel 8035 microcontroller, 25M girder physics, hammer music & death fanfare |
+| **`00:22`** | **Frogger (1981 · Konami)** | Dual AY-3-8910 chiptune BGM polyphony, hop chirps & drowning splash |
+| **`00:28`** | **Asteroids (1979 · Atari)** | Atari vector drift, discrete dual-pitch heartbeat thrust & vector cannon |
+| **`00:33`** | **Tempest (1981 · Atari)** | 3D perspective warp, Superzapper discharge & Atari POKEY distortion sweeps |
+| **`00:38`** | **Crazy Climber (1980 · Nichibutsu)** | Dual AY-3-8910 PSG vertical climber, falling pot whistle & splat |
+| **`00:44`** | **Gyruss (1983 · Konami)** | 360° polar flight, 5x AY-3-8910 stereo PSG playing Bach's Toccata & Fugue |
+| **`00:49`** | **SFX Bank 1: Golden Age** | 27 authentic arcade sounds (Space Invaders, Galaxian, Defender) |
+| **`00:55`** | **SFX Bank 2: Nintendo 8-Bit** | 27 NES 2A03 APU square/noise synthesis sounds (Mario, Punch-Out) |
+| **`01:00`** | **SFX Bank 3: Atari Vector & Sci-Fi** | 27 Atari POKEY polyphonic synth & sci-fi laser burst sounds |
+| **`01:05`** | **SFX Bank 4: Konami & Sega FM** | 27 Dual AY-3-8910 & YM2151 FM arcade action sound effects |
+| **`01:10`** | **Speech ROMs: Berzerk** | TSI S14001A Speech Chip: *"Intruder Alert!"* & *"Coin Detected in Pocket!"* |
+| **`01:15`** | **Speech ROMs: Q\*bert & Sinistar** | Votrax SC-01 & Harris HC-55516 CVSD: *"@!#?@!"* & *"Beware, I Live!"* |
+| **`01:21`** | **Speech ROMs: Classics** | Wizard of Wor, Gorf (*"Long Live Gorf!"*) & Dragon's Lair authentic PCM |
+| **`01:28`** | **16-Step Tracker & Drum Synth** | TR-808 modeled analog kick, snare, hi-hats, claps with 8 factory patterns |
+| **`01:32`** | **NVRAM Leaderboard & Pro Deck** | Persistent High Scores, Universal Immortal God Mode & Stage Skip |
+| **`01:36`** | **Live Jukebox & Circuit Bending** | Chiptune album playback, real-time RAM glitch circuit bending & time machine |
+| **`01:42`** | **Production Certification** | Hermes QA Agent 24/24 test suite certified |
+
+---
+
 ## 🌟 Key Features
 
 1. **8 Playable Classic Arcade Engines (Bare-Metal Z80 & Sound Hardware Emulation):**
