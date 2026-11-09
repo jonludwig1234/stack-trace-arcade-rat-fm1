@@ -20378,6 +20378,8 @@ function renderCrazyClimber() {
 // -------------------------------------------------------------------------
 // 1. GALAGA (1981 NAMCO DUAL Z80): FULLY PLAYABLE ARCADE ENGINE
 // -------------------------------------------------------------------------
+// 1. GALAGA 1981 NAMCO DUAL Z80 + 3-VOICE WSG: HIGH-FIDELITY PLAYABLE ENGINE
+// -------------------------------------------------------------------------
 const galagaGame = {
   active: false,
   gameOver: false,
@@ -20394,6 +20396,9 @@ const galagaGame = {
   lives: 3,
   stage: 1,
   tick: 0,
+  invulnerable: 0,
+  respawnTimer: 0,
+  fireCooldown: 0,
   dualFighter: false,
   isCapturing: false,
   captureAngle: 0,
@@ -20418,6 +20423,9 @@ function initGalagaGame() {
   galagaGame.lives = (typeof arcadeImmortalMode !== 'undefined' && arcadeImmortalMode) ? 99 : 3;
   galagaGame.stage = 1;
   galagaGame.tick = 0;
+  galagaGame.invulnerable = 0;
+  galagaGame.respawnTimer = 0;
+  galagaGame.fireCooldown = 0;
   galagaGame.dualFighter = false;
   galagaGame.isCapturing = false;
   galagaGame.captureAngle = 0;
@@ -20428,6 +20436,34 @@ function initGalagaGame() {
   galagaGame.hitsCount = 0;
   spawnGalagaFleet();
   playArcadeSfx('GALAGA-INTRO');
+}
+
+function killGalagaShip() {
+  const g = galagaGame;
+  if (g.invulnerable > 0 || g.gameOver || g.isCapturing || g.respawnTimer > 0) return;
+
+  g.explosions.push({ x: g.shipX, y: 220, frame: 0 });
+  playArcadeSfx('GALAGA-DEATH');
+
+  if (g.dualFighter) {
+    g.dualFighter = false;
+    g.invulnerable = 60;
+    g.scorePops.push({ x: g.shipX, y: 195, text: 'FIGHTER LOST', timer: 35 });
+    return;
+  }
+
+  g.respawnTimer = 40;
+  g.invulnerable = 90;
+  g.shipX = 120;
+  g.moveDir = 0;
+
+  if (!arcadeImmortalMode) {
+    g.lives--;
+    if (g.lives <= 0) {
+      g.gameOver = true;
+      playArcadeSfx('DK-GAMEOVER');
+    }
+  }
 }
 
 function spawnGalagaFleet() {
@@ -20482,16 +20518,19 @@ function spawnGalagaFleet() {
 
 function galagaFire() {
   initAudio();
-  if (galagaGame.isCapturing) return;
-  if (galagaGame.lasers.length < (galagaGame.dualFighter ? 8 : 4)) {
-    if (galagaGame.dualFighter) {
-      galagaGame.lasers.push({ x: galagaGame.shipX - 10, y: 214, vy: -6.0 });
-      galagaGame.lasers.push({ x: galagaGame.shipX - 4,  y: 214, vy: -6.0 });
-      galagaGame.lasers.push({ x: galagaGame.shipX + 4,  y: 214, vy: -6.0 });
-      galagaGame.lasers.push({ x: galagaGame.shipX + 10, y: 214, vy: -6.0 });
+  const g = galagaGame;
+  if (g.isCapturing || g.gameOver || g.respawnTimer > 0) return;
+
+  const maxLasers = g.dualFighter ? 8 : 4;
+  if (g.lasers.length < maxLasers) {
+    if (g.dualFighter) {
+      g.lasers.push({ x: g.shipX - 10, y: 214, vy: -7.5 });
+      g.lasers.push({ x: g.shipX - 6,  y: 214, vy: -7.5 });
+      g.lasers.push({ x: g.shipX + 6,  y: 214, vy: -7.5 });
+      g.lasers.push({ x: g.shipX + 10, y: 214, vy: -7.5 });
     } else {
-      galagaGame.lasers.push({ x: galagaGame.shipX - 4, y: 214, vy: -6.0 });
-      galagaGame.lasers.push({ x: galagaGame.shipX + 4, y: 214, vy: -6.0 });
+      g.lasers.push({ x: g.shipX - 4, y: 214, vy: -7.5 });
+      g.lasers.push({ x: g.shipX + 4, y: 214, vy: -7.5 });
     }
     playArcadeSfx('GALAGA-FIRE');
   }
@@ -20499,7 +20538,7 @@ function galagaFire() {
 
 function updateGalagaGame() {
   if (galagaGame.gameOver) {
-    if (arcadeKeysDown['1'] || arcadeKeysDown['5'] || arcadeKeysDown[' '] || arcadeKeysDown['enter'] || arcadeKeysDown['r']) {
+    if (arcadeKeysDown['1'] || arcadeKeysDown['5'] || arcadeKeysDown[' '] || arcadeKeysDown['enter'] || arcadeKeysDown['r'] || arcadeKeysDown['c'] || arcadeKeysDown['p']) {
       initGalagaGame();
     }
     return;
@@ -20507,6 +20546,18 @@ function updateGalagaGame() {
 
   galagaGame.tick++;
   const g = galagaGame;
+
+  if (g.invulnerable > 0) g.invulnerable--;
+  if (g.respawnTimer > 0) g.respawnTimer--;
+
+  // Held Fire Key: responsive continuous auto-fire cadence
+  if (!g.isCapturing && !g.gameOver && g.respawnTimer <= 0) {
+    if (arcadeKeysDown[' '] || arcadeKeysDown['enter'] || (typeof dpadActiveAction !== 'undefined' && dpadActiveAction)) {
+      if (g.tick % 10 === 0) {
+        galagaFire();
+      }
+    }
+  }
 
   // Authentic Namco WSG Space Fleet & Challenging Stage BGM
   if (!g.gameOver && !g.isCapturing) {
@@ -20525,7 +20576,7 @@ function updateGalagaGame() {
   }
 
   // Active Key Steer
-  if (!g.isCapturing) {
+  if (!g.isCapturing && g.respawnTimer <= 0) {
     if (currentMode === 'tour') {
       let targetX = 120 + Math.sin(g.tick * 0.04) * 55;
       const diving = g.aliens.find(a => a.state === 'dive' || a.state === 'tractor');
@@ -20546,16 +20597,20 @@ function updateGalagaGame() {
     // Player is being captured by tractor beam!
     g.captureAngle += 0.25;
     g.captureShipY -= 1.8;
-    if (g.tractorBeam.boss && g.captureShipY <= g.tractorBeam.boss.y + 12) {
+    const targetY = (g.tractorBeam.boss ? g.tractorBeam.boss.y + 12 : 75);
+    if (g.captureShipY <= targetY || g.captureShipY <= 60) {
       // Reached Boss Galaga: dock as captive ship!
-      g.capturedShip = { boss: g.tractorBeam.boss, x: g.tractorBeam.boss.x + 16, y: g.tractorBeam.boss.y };
+      const boss = g.tractorBeam.boss;
+      g.capturedShip = { boss: boss, x: (boss ? boss.x + 16 : 136), y: (boss ? boss.y : 50) };
       g.tractorBeam.active = false;
       g.tractorBeam.state = 'off';
-      if (g.tractorBeam.boss) g.tractorBeam.boss.state = 'return';
+      if (boss) boss.state = 'return';
       g.isCapturing = false;
       g.shipX = 120;
       g.captureShipY = 220;
       g.captureAngle = 0;
+      g.respawnTimer = 0;
+      g.invulnerable = 60;
       if (!arcadeImmortalMode) {
         g.lives--;
         if (g.lives <= 0) {
@@ -20593,20 +20648,27 @@ function updateGalagaGame() {
           else playArcadeSfx('AST-EXP');
           if (pts >= 300) playArcadeSfx('BONUS');
 
-          // If boss had tractor beam active, cancel it
+          // If boss had tractor beam active, cancel it and rescue player if currently capturing
           if (g.tractorBeam.active && g.tractorBeam.boss === al) {
             g.tractorBeam.active = false;
             g.tractorBeam.state = 'off';
-            g.isCapturing = false;
+            if (g.isCapturing) {
+              g.isCapturing = false;
+              g.shipX = 120;
+              g.respawnTimer = 20;
+              g.invulnerable = 60;
+              g.score += 500;
+              g.scorePops.push({ x: g.shipX, y: 180, text: 'RESCUED! +500', timer: 40 });
+            }
           }
 
           // If boss had captured ship, release and create DUAL FIGHTER!
-          if (g.capturedShip && g.capturedShip.boss === al) {
+          if (g.capturedShip && (g.capturedShip.boss === al || !g.capturedShip.boss)) {
             g.dualFighter = true;
             g.capturedShip = null;
             playArcadeSfx('BONUS');
             g.score += 1000;
-            g.scorePops.push({ x: 120, y: 180, text: 'DUAL FIGHTER! +1000', timer: 50 });
+            g.scorePops.push({ x: g.shipX, y: 180, text: 'DUAL FIGHTER! +1000', timer: 50 });
           }
 
           g.aliens.splice(a, 1);
@@ -20621,11 +20683,12 @@ function updateGalagaGame() {
 
   // Aliens Sway, Dive, and Tractor Beam
   const sway = Math.sin(g.tick * 0.05) * 10;
-  g.aliens.forEach(al => {
+  for (let a = g.aliens.length - 1; a >= 0; a--) {
+    const al = g.aliens[a];
     if (al.state === 'grid') {
       al.x = al.homeX + sway;
       al.y = al.homeY + Math.sin(g.tick * 0.08 + al.homeX) * 2;
-      if (Math.random() < 0.004 && g.aliens.filter(a => a.state === 'dive' || a.state === 'tractor').length < 3) {
+      if (Math.random() < 0.004 && g.aliens.filter(e => e.state === 'dive' || e.state === 'tractor').length < 3) {
         if (al.type === 'boss' && !g.tractorBeam.active && !g.dualFighter && !g.capturedShip && Math.random() < 0.45) {
           al.state = 'tractor_approach';
           al.diveTick = 0;
@@ -20655,7 +20718,7 @@ function updateGalagaGame() {
         playArcadeSfx('TRACT');
       }
     } else if (al.state === 'tractor') {
-      g.tractorBeam.timer--;
+      if (!g.isCapturing) g.tractorBeam.timer--;
       if (g.tractorBeam.state === 'expanding') {
         g.tractorBeam.height += 4.5;
         if (g.tractorBeam.height >= g.tractorBeam.maxH) {
@@ -20664,7 +20727,7 @@ function updateGalagaGame() {
         }
       }
       // Check capture collision if beam reaches bottom
-      if (g.tractorBeam.state === 'active' && !g.isCapturing && !g.dualFighter) {
+      if (g.tractorBeam.state === 'active' && !g.isCapturing && !g.dualFighter && g.respawnTimer <= 0) {
         if (Math.abs(g.shipX - g.tractorBeam.x) < 22) {
           g.isCapturing = true;
           g.captureShipY = 220;
@@ -20672,7 +20735,7 @@ function updateGalagaGame() {
           playArcadeSfx('CAPTURE');
         }
       }
-      if (g.tractorBeam.timer <= 0) {
+      if (!g.isCapturing && g.tractorBeam.timer <= 0) {
         g.tractorBeam.active = false;
         g.tractorBeam.state = 'off';
         al.state = 'dive';
@@ -20686,20 +20749,11 @@ function updateGalagaGame() {
         g.bombs.push({ x: al.x, y: al.y + 6, vy: 2.8 });
       }
       // Diving alien crashes into player ship
-      if (Math.abs(al.x - g.shipX) < (g.dualFighter ? 18 : 10) && Math.abs(al.y - 220) < 14 && currentMode !== 'tour' && !g.gameOver) {
-        g.explosions.push({ x: g.shipX, y: 220, frame: 0 });
-        playArcadeSfx('GALAGA-DEATH');
-        if (!arcadeImmortalMode) {
-          if (g.dualFighter) {
-            g.dualFighter = false;
-          } else {
-            g.lives--;
-            if (g.lives <= 0) {
-              g.gameOver = true;
-              playArcadeSfx('DK-GAMEOVER');
-            }
-          }
-        }
+      if (Math.abs(al.x - g.shipX) < (g.dualFighter ? 18 : 10) && Math.abs(al.y - 220) < 14 && currentMode !== 'tour' && !g.gameOver && g.invulnerable <= 0 && !g.isCapturing && g.respawnTimer <= 0) {
+        g.explosions.push({ x: al.x, y: al.y, frame: 0 });
+        g.aliens.splice(a, 1);
+        killGalagaShip();
+        continue;
       }
       if (al.y > 232) {
         al.state = 'return';
@@ -20714,7 +20768,7 @@ function updateGalagaGame() {
         al.angle = 0;
       }
     }
-  });
+  }
 
   if (g.aliens.length === 0) {
     if (g.isChallengingStage) {
@@ -20733,6 +20787,7 @@ function updateGalagaGame() {
       g.hitsCount = 0;
     }
     spawnGalagaFleet();
+    g.scorePops.push({ x: 120, y: 140, text: `STAGE ${g.stage}`, timer: 60 });
   }
 
   // Bombs
@@ -20743,21 +20798,10 @@ function updateGalagaGame() {
       g.bombs.splice(b, 1);
       continue;
     }
-    if (!g.isCapturing && Math.abs(bm.x - g.shipX) < (g.dualFighter ? 18 : 9) && Math.abs(bm.y - 220) < 9) {
+    if (!g.isCapturing && g.invulnerable <= 0 && g.respawnTimer <= 0 && !g.gameOver && Math.abs(bm.x - g.shipX) < (g.dualFighter ? 18 : 9) && Math.abs(bm.y - 220) < 9) {
       g.bombs.splice(b, 1);
-      g.explosions.push({ x: g.shipX, y: 220, frame: 0 });
-      playArcadeSfx('GALAGA-DEATH');
-      if (currentMode !== 'tour' && !arcadeImmortalMode) {
-        if (g.dualFighter) {
-          g.dualFighter = false;
-        } else {
-          g.lives--;
-          if (g.lives <= 0) {
-            g.gameOver = true;
-            playArcadeSfx('DK-GAMEOVER');
-          }
-        }
-      }
+      killGalagaShip();
+      continue;
     }
   }
 
@@ -20941,7 +20985,11 @@ function renderGalagaGame() {
   // Captive Ship Docked to Boss Galaga
   if (galagaGame.capturedShip && galagaGame.capturedShip.boss) {
     const boss = galagaGame.capturedShip.boss;
-    drawSingleFighter(boss.x + 16, boss.y - 2, '#eb2f06');
+    ctx.save();
+    ctx.translate(boss.x + 16, boss.y - 2);
+    if (boss.angle) ctx.rotate(boss.angle);
+    drawSingleFighter(0, 0, '#eb2f06');
+    ctx.restore();
   }
 
   // Explosions
@@ -20992,7 +21040,9 @@ function renderGalagaGame() {
     ctx.rotate(galagaGame.captureAngle);
     drawSingleFighter(0, 0, '#eb2f06');
     ctx.restore();
-  } else {
+  } else if (galagaGame.respawnTimer > 0) {
+    // Exploding / respawning, do not draw ship
+  } else if (!galagaGame.gameOver && (galagaGame.invulnerable <= 0 || (galagaGame.tick % 6 < 3))) {
     const shipY = 220;
     if (galagaGame.dualFighter) {
       ctx.fillStyle = '#718093';
@@ -24544,6 +24594,10 @@ function handleUnifiedAction(act, isDown = true) {
   // 3. GALAGA
   if (activeGame === 'galaga') {
     if (typeof galagaGame !== 'undefined') {
+      if (galagaGame.gameOver && isDown && (act === 'action' || act === 'up')) {
+        initGalagaGame();
+        return;
+      }
       if (act === 'left') {
         galagaGame.moveDir = isDown ? -1 : (arcadeKeysDown['d'] || arcadeKeysDown['arrowright'] ? 1 : 0);
       } else if (act === 'right') {
