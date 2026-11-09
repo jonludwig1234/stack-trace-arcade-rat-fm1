@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""
+Generate the expanded 80+ game catalog configurator for M-VAVE FM-1.
+"""
+import json
+
+games = [
+  # NAMCO & MIDWAY PAC FAMILY
+  {"id": "pacman", "name": "Pac-Man", "year": 1980, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 24.5, "cat": "maze", "desc": "The quintessential 4-ghost dot-munching maze chaser."},
+  {"id": "mspacman", "name": "Ms. Pac-Man", "year": 1982, "maker": "Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 14.0, "cat": "maze", "desc": "4 new mazes, bouncing fruit prizes, and erratic ghost AI."},
+  {"id": "pacplus", "name": "Pac-Man Plus", "year": 1982, "maker": "Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 24.5, "cat": "maze", "desc": "Fast-paced official mod with mystery food items and ghost invis."},
+  {"id": "jrpacman", "name": "Jr. Pac-Man", "year": 1983, "maker": "Bally Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Scrolling giant mazes, exploding mega-dots, and propeller beanie."},
+  {"id": "superpac", "name": "Super Pac-Man", "year": 1982, "maker": "Namco", "cpu": "6809", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Eat keys to unlock gates, super pellets make you giant and invincible."},
+  {"id": "babypac", "name": "Baby Pac-Man", "year": 1982, "maker": "Bally Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Hybrid video maze and pinball playfield."},
+
+  # NAMCO GOLDEN AGE
+  {"id": "galaga", "name": "Galaga", "year": 1981, "maker": "Namco", "cpu": "3× Z80", "sound": "Namco WSG", "size": 28.0, "cat": "shooter", "desc": "Dual-fighter space assault with capture beam rescue mechanics."},
+  {"id": "galaxian", "name": "Galaxian", "year": 1979, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 14.0, "cat": "shooter", "desc": "Parent hardware of Pac-Man; multi-colored diving alien swarms."},
+  {"id": "gaplus", "name": "Gaplus / Galaga 3", "year": 1984, "maker": "Namco", "cpu": "3× 6809", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "360-degree tractor beam reversal, triple ships, and hyper-speed."},
+  {"id": "digdug", "name": "Dig Dug", "year": 1982, "maker": "Namco", "cpu": "3× Z80", "sound": "Namco WSG", "size": 28.0, "cat": "maze", "desc": "Subterranean pump action; music plays exclusively when walking."},
+  {"id": "digdug2", "name": "Dig Dug II", "year": 1985, "maker": "Namco", "cpu": "2× 6809", "sound": "Namco C15", "size": 48.0, "cat": "action", "desc": "Island drilling mechanics dropping chunks of land into the sea."},
+  {"id": "rallyx", "name": "Rally-X", "year": 1980, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 20.0, "cat": "action", "desc": "High-speed maze racing, blinding smoke screens, and beeping radar."},
+  {"id": "newrallyx", "name": "New Rally-X", "year": 1981, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 24.0, "cat": "action", "desc": "Refined rally racing with lucky flags and tuned red car difficulty."},
+  {"id": "bosconian", "name": "Bosconian", "year": 1981, "maker": "Namco", "cpu": "3× Z80", "sound": "Namco WSG", "size": 32.0, "cat": "shooter", "desc": "Free-scrolling space station assault with early digitized voice lines."},
+  {"id": "mappy", "name": "Mappy", "year": 1983, "maker": "Namco", "cpu": "2× 6809", "sound": "Namco WSG", "size": 32.0, "cat": "platformer", "desc": "Trampoline-bouncing cop mouse with bouncy ragtime chiptune."},
+  {"id": "xevious", "name": "Xevious", "year": 1982, "maker": "Namco", "cpu": "3× Z80", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "Vertical scrolling air/ground dual-targeting forest and desert flight."},
+  {"id": "grobda", "name": "Grobda", "year": 1984, "maker": "Namco", "cpu": "2× 6809", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "Arena combat tank shooter; destroy enemy tanks and bounce blast waves."},
+  {"id": "druaga", "name": "Tower of Druaga", "year": 1984, "maker": "Namco", "cpu": "2× 6809", "sound": "Namco WSG", "size": 48.0, "cat": "action", "desc": "60-floor labyrinth crawl with cryptic chests and golden armor."},
+  {"id": "motos", "name": "Motos", "year": 1985, "maker": "Namco", "cpu": "2× 6809", "sound": "Namco C15", "size": 48.0, "cat": "action", "desc": "Sumo bumper car physics pushing space monsters off floating platforms."},
+  {"id": "warpwarp", "name": "Warp & Warp", "year": 1981, "maker": "Namco", "cpu": "8080", "sound": "Namco WSG", "size": 16.0, "cat": "shooter", "desc": "Dual Space-World and Maze-World dimension warping shooter."},
+
+  # NINTENDO ARCADE CLASSICS
+  {"id": "dkong", "name": "Donkey Kong", "year": 1981, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 20.0, "cat": "platformer", "desc": "The birth of Mario; hammer smashing, barrel dodging, and rivet pulling."},
+  {"id": "dkongjr", "name": "Donkey Kong Jr.", "year": 1982, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 24.0, "cat": "platformer", "desc": "Swing on jungle vines to rescue caged Donkey Kong from whip-wielding Mario."},
+  {"id": "dkong3", "name": "Donkey Kong 3", "year": 1983, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "shooter", "desc": "Stanley the bugman spraying bug spray up at DK and angry creepers."},
+  {"id": "mario", "name": "Mario Bros.", "year": 1983, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "platformer", "desc": "Sewer plumber combat; flip turtles, kick crabs, and strike the POW block."},
+  {"id": "popeye", "name": "Popeye", "year": 1982, "maker": "Nintendo", "cpu": "Z80", "sound": "AY-3-8910", "size": 32.0, "cat": "platformer", "desc": "Catch floating hearts, musical notes, and spinach cans from Olive Oyl."},
+  {"id": "radarscp", "name": "Radar Scope", "year": 1979, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 16.0, "cat": "shooter", "desc": "3D perspective space shooter that was converted into Donkey Kong."},
+  {"id": "sheriff", "name": "Sheriff", "year": 1979, "maker": "Nintendo", "cpu": "8080", "sound": "Discrete", "size": 12.0, "cat": "shooter", "desc": "Twin-stick Western town defense shooting bandits around a ring."},
+
+  # KONAMI CHIPTUNE SQUAD
+  {"id": "frogger", "name": "Frogger", "year": 1981, "maker": "Konami", "cpu": "2× Z80", "sound": "AY-3-8910", "size": 14.0, "cat": "action", "desc": "Highway dodging and turtle diving with famous chiptune melody suite."},
+  {"id": "scramble", "name": "Scramble", "year": 1981, "maker": "Konami", "cpu": "2× Z80", "sound": "2× AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Cave bombing runs with vertical rocket launches and fuel management."},
+  {"id": "supercobra", "name": "Super Cobra", "year": 1981, "maker": "Konami", "cpu": "2× Z80", "sound": "2× AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Helicopter sequel to Scramble with oil tanks, minefields, and hostage carry."},
+  {"id": "timepilot", "name": "Time Pilot", "year": 1982, "maker": "Konami", "cpu": "2× Z80", "sound": "2× AY-3-8910", "size": 24.0, "cat": "shooter", "desc": "360-degree dogfighting across 1910 biplanes, 1940 WWII, 1970 copters, and 2001 UFOs."},
+  {"id": "timeplt84", "name": "Time Pilot '84", "year": 1984, "maker": "Konami", "cpu": "6809", "sound": "2× AY-3-8910", "size": 32.0, "cat": "shooter", "desc": "Futuristic lock-on missile dogfight sequel over sci-fi cloud cities."},
+  {"id": "gyruss", "name": "Gyruss", "year": 1983, "maker": "Konami", "cpu": "2× Z80 + 6809", "sound": "5× AY-3-8910", "size": 48.0, "cat": "shooter", "desc": "Circular 3D tube shooter playing Bach's Toccata in Dm on 15 audio voices."},
+  {"id": "pooyan", "name": "Pooyan", "year": 1982, "maker": "Konami", "cpu": "2× Z80", "sound": "2× AY-3-8910", "size": 20.0, "cat": "shooter", "desc": "Elevator archery defending piglets against balloon-floating wolves."},
+  {"id": "rocnrope", "name": "Roc'n Rope", "year": 1983, "maker": "Konami", "cpu": "2× 6809", "sound": "2× AY-3-8910", "size": 32.0, "cat": "platformer", "desc": "Harpoon climbing rope mechanics navigating cavemen and dinosaurs."},
+  {"id": "circusc", "name": "Circus Charlie", "year": 1984, "maker": "Konami", "cpu": "Z80", "sound": "2× AY-3-8910", "size": 32.0, "cat": "action", "desc": "Circus clown lion jumping, trapeze swinging, and tightrope balance."},
+  {"id": "trackfld", "name": "Track & Field", "year": 1983, "maker": "Konami", "cpu": "2× 6809", "sound": "2× AY-3-8910 + VLM", "size": 48.0, "cat": "sports", "desc": "100m dash, long jump, javelin, 110m hurdles with rapid button mashing."},
+  {"id": "hyperspt", "name": "Hyper Sports", "year": 1984, "maker": "Konami", "cpu": "2× 6809", "sound": "2× AY-3-8910 + VLM", "size": 48.0, "cat": "sports", "desc": "Swimming, skeet shooting, vault, archery, triple jump, and weightlifting."},
+  {"id": "yiear", "name": "Yie Ar Kung-Fu", "year": 1985, "maker": "Konami", "cpu": "Z80", "sound": "VLM5030 + PSG", "size": 48.0, "cat": "action", "desc": "The forefather of 1-on-1 fighting games; 16 distinct martial arts strikes."},
+  {"id": "roadf", "name": "Road Fighter", "year": 1984, "maker": "Konami", "cpu": "Z80", "sound": "2× AY-3-8910", "size": 32.0, "cat": "sports", "desc": "Top-down turbo highway racing with drift recovery and fuel tanker grabs."},
+  {"id": "junofirst", "name": "Juno First", "year": 1983, "maker": "Konami", "cpu": "2× 6809", "sound": "2× AY-3-8910", "size": 32.0, "cat": "shooter", "desc": "High-speed pseudo-3D grid dogfighting with hyper-space warp drive."},
+  {"id": "tutankhm", "name": "Tutankham", "year": 1982, "maker": "Konami", "cpu": "2× 6809", "sound": "2× AY-3-8910", "size": 32.0, "cat": "maze", "desc": "Tomb exploration shooter firing flash bombs and collecting pharaoh masks."},
+  {"id": "amidar", "name": "Amidar", "year": 1981, "maker": "Konami", "cpu": "2× Z80", "sound": "2× AY-3-8910", "size": 16.0, "cat": "maze", "desc": "Grid tracer painting lines around pigs and police cops with corner jumps."},
+
+  # ATARI VECTOR & SPINNER LEGENDS
+  {"id": "tempest", "name": "Tempest", "year": 1981, "maker": "Atari", "cpu": "6502", "sound": "2× POKEY", "size": 24.0, "cat": "spinner", "desc": "Geometric vector tube shooter controlled with physical rotary spinner knob."},
+  {"id": "asteroids", "name": "Asteroids", "year": 1979, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 10.0, "cat": "vector", "desc": "Vector space rocks, saucer sirens, and accelerating 2-note heartbeat bass."},
+  {"id": "astdelux", "name": "Asteroids Deluxe", "year": 1981, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 12.0, "cat": "vector", "desc": "Cluster-splitting death stars, tracking saucers, and defensive energy shield."},
+  {"id": "centiped", "name": "Centipede", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 16.0, "cat": "spinner", "desc": "Trackball / spinner rapid-fire mushroom patch bug shooter."},
+  {"id": "milliped", "name": "Millipede", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 24.0, "cat": "spinner", "desc": "DDT poison bombs, inchworms that slow time, bees, and spiders."},
+  {"id": "battlezone", "name": "Battlezone", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 16.0, "cat": "vector", "desc": "First-person 3D vector wireframe tank combat with periscope radar."},
+  {"id": "lunarlander", "name": "Lunar Lander", "year": 1979, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 10.0, "cat": "spinner", "desc": "Vector physics moon landing; rotary encoder operates continuous rocket burn."},
+  {"id": "missile", "name": "Missile Command", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 12.0, "cat": "spinner", "desc": "Defend 6 coastal cities from MIRV nuclear missile barrages."},
+  {"id": "redbaron", "name": "Red Baron", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 16.0, "cat": "vector", "desc": "First-person 3D vector dogfight combat against WWI biplanes and zeppelins."},
+  {"id": "spaceduel", "name": "Space Duel", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2× POKEY", "size": 24.0, "cat": "vector", "desc": "Color vector space combat with ships linked together by energy tethers."},
+  {"id": "gravitar", "name": "Gravitar", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2× POKEY", "size": 24.0, "cat": "vector", "desc": "Brutal gravitational vector exploration flying into alien bunker bases."},
+  {"id": "mhavoc", "name": "Major Havoc", "year": 1983, "maker": "Atari", "cpu": "2× 6502", "sound": "2× POKEY", "size": 48.0, "cat": "spinner", "desc": "Hybrid vector space combat and roller-controller platform jumping."},
+  {"id": "crystal", "name": "Crystal Castles", "year": 1983, "maker": "Atari", "cpu": "6502", "sound": "2× POKEY", "size": 32.0, "cat": "spinner", "desc": "Isometric Escher castles; Bentley Bear gathering gems with magic hat."},
+  {"id": "blackwid", "name": "Black Widow", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2× POKEY", "size": 24.0, "cat": "vector", "desc": "Color vector spiderweb arena shooter driving eggs, beetles, and thunderbugs."},
+  {"id": "pong", "name": "Pong / Super Pong", "year": 1974, "maker": "Atari", "cpu": "Discrete/6502", "sound": "Beeper", "size": 4.0, "cat": "spinner", "desc": "The video game genesis; optical rotary knob operates paddle deflection."},
+  {"id": "breakout", "name": "Breakout / Super", "year": 1976, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 8.0, "cat": "spinner", "desc": "Block destruction mechanics with ball trajectory acceleration."},
+
+  # TAITO CLASSICS
+  {"id": "invaders", "name": "Space Invaders", "year": 1978, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 8.0, "cat": "shooter", "desc": "The founding legend; descending alien march syncing to audio tempo."},
+  {"id": "invaddlx", "name": "Space Invaders II", "year": 1979, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 12.0, "cat": "shooter", "desc": "Flashing saucers that beam down reinforcements and splitting aliens."},
+  {"id": "junglehunt", "name": "Jungle Hunt", "year": 1982, "maker": "Taito", "cpu": "3× Z80", "sound": "4× AY-3-8910", "size": 48.0, "cat": "action", "desc": "Vine swinging, crocodile river stabbing, and cannibals boiling cauldron."},
+  {"id": "elevator", "name": "Elevator Action", "year": 1983, "maker": "Taito", "cpu": "3× Z80", "sound": "4× AY-3-8910", "size": 48.0, "cat": "action", "desc": "Secret agent 17 stealing red-door documents and dropping light fixtures."},
+  {"id": "frontline", "name": "Front Line", "year": 1982, "maker": "Taito", "cpu": "3× Z80", "sound": "3× AY-3-8910", "size": 32.0, "cat": "spinner", "desc": "Infantry battlefield combat with rotary dial aiming, grenades, and tanks."},
+  {"id": "tinstar", "name": "The Tin Star", "year": 1983, "maker": "Taito", "cpu": "3× Z80", "sound": "4× AY-3-8910", "size": 32.0, "cat": "spinner", "desc": "Saloon shootout combat with full rotary optical barrel aiming."},
+  {"id": "qix", "name": "Qix", "year": 1981, "maker": "Taito", "cpu": "2× 6809", "sound": "Discrete", "size": 24.0, "cat": "action", "desc": "Claim territory by drawing slow/fast bounding boxes avoiding the Qix helix."},
+  {"id": "phoenix", "name": "Phoenix", "year": 1980, "maker": "Taito/Amstar", "cpu": "8085", "sound": "TMS36XX + Noise", "size": 16.0, "cat": "shooter", "desc": "5-phase space assault concluding with the first multi-shield mothership boss."},
+  {"id": "pleiads", "name": "Pleiads", "year": 1981, "maker": "Tehkan", "cpu": "8085", "sound": "TMS36XX + Noise", "size": 16.0, "cat": "shooter", "desc": "Martian warbird assault, space station docking, and fortress battles."},
+  {"id": "lrescue", "name": "Lunar Rescue", "year": 1979, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 10.0, "cat": "action", "desc": "Fly lander to lunar crater, rescue astronaut, and dock with mothership."},
+  {"id": "arkanoid", "name": "Arkanoid", "year": 1986, "maker": "Taito", "cpu": "Z80", "sound": "AY-3-8910", "size": 48.0, "cat": "spinner", "desc": "The ultimate block breaker; laser cannons, catch powerups, knob paddle."},
+
+  # WILLIAMS & BALLY MIDWAY
+  {"id": "defender", "name": "Defender", "year": 1981, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Bi-directional radar planet defense catching abducted humanoids."},
+  {"id": "stargate", "name": "Stargate / Def. II", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Stargate warp portals, cloaking device, invviso shield, and firebombs."},
+  {"id": "joust", "name": "Joust", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "action", "desc": "Fly flying ostriches over lava pits, lance jousting, and pterodactyl duels."},
+  {"id": "robotron", "name": "Robotron: 2084", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Frenetic 360-degree twin-stick arena combat saving the last human family."},
+  {"id": "sinistar", "name": "Sinistar", "year": 1983, "maker": "Williams", "cpu": "6809", "sound": "6800 + Speech", "size": 32.0, "cat": "shooter", "desc": "Mine planetoids for Sinibombs while terrifying demonic star roars voice."},
+  {"id": "bubbles", "name": "Bubbles", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "action", "desc": "Soap bubble scrubbing kitchen sinks eating ants and avoiding sponges."},
+  {"id": "gorf", "name": "Gorf", "year": 1981, "maker": "Midway", "cpu": "Z80", "sound": "Votrax Speech + PSG", "size": 24.0, "cat": "shooter", "desc": "5 distinctive missions with robotic speech synthesis insulting players."},
+  {"id": "wow", "name": "Wizard of Wor", "year": 1981, "maker": "Midway", "cpu": "Z80", "sound": "Votrax Speech + PSG", "size": 24.0, "cat": "maze", "desc": "Co-op radar dungeon hunt hunting invisible Burwors, Garwors, and Worluks."},
+  {"id": "tron", "name": "Tron", "year": 1982, "maker": "Bally Midway", "cpu": "Z80", "sound": "PSG + Tape", "size": 32.0, "cat": "spinner", "desc": "4 mini-games: Light Cycles, MCP Cone, I/O Tower, and Tank Battle with spinner."},
+  {"id": "tapper", "name": "Tapper", "year": 1983, "maker": "Bally Midway", "cpu": "Z80", "sound": "PSG + DAC", "size": 48.0, "cat": "action", "desc": "Slide root beers down four saloon bars to thirsty cowboys and aliens."},
+
+  # DATA EAST, IREM, SEGA & OTHERS
+  {"id": "burgertime", "name": "BurgerTime", "year": 1982, "maker": "Data East", "cpu": "Z80", "sound": "AY-3-8910", "size": 28.0, "cat": "platformer", "desc": "Chef Peter Pepper dropping buns and beef patties on hot dogs and pickles."},
+  {"id": "burnin", "name": "Bump 'n' Jump", "year": 1982, "maker": "Data East", "cpu": "Z80", "sound": "AY-3-8910", "size": 24.0, "cat": "sports", "desc": "High-flying jumping car ramming rival racers into guard rails."},
+  {"id": "karatec", "name": "Karate Champ", "year": 1984, "maker": "Data East", "cpu": "2× Z80", "sound": "AY-3-8910 + DAC", "size": 32.0, "cat": "action", "desc": "Traditional kumite point scoring with dual joystick martial arts strikes."},
+  {"id": "moonpatrol", "name": "Moon Patrol", "year": 1982, "maker": "Irem", "cpu": "Z80", "sound": "AY-3-8910", "size": 32.0, "cat": "action", "desc": "Parallax scrolling moon buggy jumping craters and shooting flying saucers."},
+  {"id": "cclimber", "name": "Crazy Climber", "year": 1980, "maker": "Nichibutsu", "cpu": "Z80", "sound": "AY-3-8910", "size": 24.0, "cat": "action", "desc": "Scale 200-story skyscrapers evading falling flower pots, condors, and King Kong."},
+  {"id": "mooncrst", "name": "Moon Cresta", "year": 1980, "maker": "Nichibutsu", "cpu": "Z80", "sound": "AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Sequential ship docking creating a massive 3-stage super fighter."},
+  {"id": "qbert", "name": "Q*bert", "year": 1982, "maker": "Gottlieb", "cpu": "8088", "sound": "Votrax Speech + DAC", "size": 20.0, "cat": "platformer", "desc": "Isometric pyramid color hopping swearing with cartoon speech balloons."},
+  {"id": "pengo", "name": "Pengo", "year": 1982, "maker": "Sega", "cpu": "Z80", "sound": "Namco WSG", "size": 24.0, "cat": "maze", "desc": "Slide giant ice blocks into sno-bees playing the Popcorn synth melody."},
+  {"id": "zaxxon", "name": "Zaxxon", "year": 1982, "maker": "Sega", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "shooter", "desc": "Isometric 3D space fortress assault gauging altitude via shadows."},
+  {"id": "congo", "name": "Congo Bongo", "year": 1983, "maker": "Sega", "cpu": "Z80", "sound": "SN76489", "size": 32.0, "cat": "platformer", "desc": "Isometric jungle climbing, water lily jumping, and gorilla retribution."},
+  {"id": "mrdo", "name": "Mr. Do!", "year": 1982, "maker": "Universal", "cpu": "Z80", "sound": "SN76489", "size": 24.0, "cat": "maze", "desc": "Bouncing power ball clown digging orchards, dropping apples on bad guys."},
+  {"id": "ladybug", "name": "Lady Bug", "year": 1981, "maker": "Universal", "cpu": "Z80", "sound": "SN76489", "size": 24.0, "cat": "maze", "desc": "Rotate revolving turnstile doors to trap predatory insects and spell SPECIAL."},
+  {"id": "mousetrap", "name": "Mouse Trap", "year": 1981, "maker": "Exidy", "cpu": "Z80", "sound": "Discrete", "size": 24.0, "cat": "maze", "desc": "Press colored buttons to alter maze doors and transform mouse into dog."}
+]
+
+print(f"Total Games in Catalog: {len(games)}")
+with open("web/catalog_data.json", "w") as f:
+    json.dump(games, f, indent=2)

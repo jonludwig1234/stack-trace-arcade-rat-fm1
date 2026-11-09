@@ -1,0 +1,12 @@
+# Build artifacts & temp files
+*.o
+*.a
+*.bin
+*.fwsc
+/tmp/
+__pycache__/
+*.pyc
+
+# Large raw video/renders (kept in brain / web releases)
+tools/node_modules/
+.hermes/

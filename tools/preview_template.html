@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M-VAVE FM-1 ARCADE GROOVEBOX // TITAN EDITION</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; user-select: none; }
+  body { background: #0c0d10; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  
+  .title-bar { text-align: center; margin-bottom: 16px; }
+  h1 { font-size: 1.35rem; font-weight: 900; color: #f5a623; letter-spacing: 2px; text-transform: uppercase; }
+  .subtitle { font-size: 0.8rem; color: #888; margin-top: 4px; }
+  
+  /* FM-1 Chassis */
+  .device {
+    width: 720px;
+    background: #1c1e24;
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 0 2px #2d303a;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+  }
+  
+  .device-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 12px;
+  }
+  .brand { font-weight: 900; font-size: 1.15rem; color: #fff; letter-spacing: 2px; }
+  .brand span { color: #f5a623; font-weight: 400; font-size: 0.85rem; margin-left: 8px; }
+  
+  .mode-indicator {
+    display: flex;
+    gap: 6px;
+    background: #121317;
+    padding: 4px 8px;
+    border-radius: 20px;
+    border: 1px solid #2d3038;
+  }
+  .mode-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .mode-tag.active {
+    background: #f5a623;
+    color: #000;
+    box-shadow: 0 0 10px rgba(245,166,35,0.4);
+  }
+
+  /* Top Section: Screen & Control Matrix */
+  .top-section { display: flex; gap: 24px; align-items: center; }
+  
+  .screen-bezel {
+    width: 260px;
+    height: 260px;
+    background: #08090b;
+    border-radius: 14px;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.95), 0 1px 1px rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #1a1c22;
+    position: relative;
+  }
+  #tftCanvas {
+    width: 240px;
+    height: 240px;
+    image-rendering: pixelated;
+    background: #000;
+    border-radius: 6px;
+  }
+  
+  /* Knobs & Function Panel */
+  .controls-panel { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .knobs-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .knob-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .knob-dial {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #3c404b 0%, #1e2026 80%);
+    border: 2px solid #4a4f5d;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.05s;
+  }
+  .knob-indicator {
+    position: absolute;
+    width: 3px;
+    height: 12px;
+    background: #f5a623;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+  }
+  .knob-label { font-size: 0.62rem; color: #888; font-weight: 700; text-transform: uppercase; }
+  .knob-value { font-size: 0.62rem; color: #f5a623; font-weight: 600; }
+
+  /* Buttons Bar */
+  .buttons-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .action-btn {
+    background: #282b34;
+    border: 1px solid #3c404d;
+    color: #eee;
+    padding: 8px 6px;
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+    transition: all 0.08s ease;
+  }
+  .action-btn:hover { background: #353944; border-color: #f5a623; }
+  .action-btn:active, .action-btn.active { background: #f5a623; color: #000; transform: translateY(1px); }
+  .action-btn.coin { border-left: 3px solid #ffcc00; }
+  .action-btn.start { border-left: 3px solid #2ecc71; }
+  .action-btn.rewind { border-left: 3px solid #e74c3c; }
+  .action-btn.glitch { border-left: 3px solid #9b59b6; }
+
+  /* Info / Status Banner */
+  .status-banner {
+    background: #131418;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #242730;
+    font-size: 0.72rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #aaa;
+  }
+  .status-banner b { color: #f5a623; }
+
+  /* 27 Silicone Keys Section */
+  .keyboard-section {
+    background: #141519;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .keyboard-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: #777;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .keys-container {
+    display: flex;
+    position: relative;
+    height: 105px;
+    background: transparent;
+  }
+  .key-white {
+    flex: 1;
+    height: 105px;
+    background: linear-gradient(to bottom, #d8d8d8 0%, #b2b2b2 100%);
+    border: 1px solid #2d2d2d;
+    border-radius: 0 0 6px 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 6px;
+    color: #222;
+    font-size: 0.58rem;
+    font-weight: 700;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8);
+    transition: background 0.04s, transform 0.04s;
+    z-index: 1;
+  }
+  .key-white:active, .key-white.active {
+    background: #f5a623 !important;
+    transform: translateY(2px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .key-white.dpad { background: linear-gradient(to bottom, #ffeaa7 0%, #fdcb6e 100%); }
+  .key-black {
+    position: absolute;
+    width: 24px;
+    height: 62px;
+    background: linear-gradient(to bottom, #2b2b2b 0%, #111 100%);
+    border: 1px solid #000;
+    border-radius: 0 0 4px 4px;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 4px;
+    color: #999;
+    font-size: 0.52rem;
+    transition: background 0.04s, transform 0.04s;
+  }
+  .key-black:active, .key-black.active {
+    background: #e67e22 !important;
+    transform: translateY(2px);
+  }
+  .dpad-badge {
+    background: #d63031;
+    color: #fff;
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-size: 0.52rem;
+    font-weight: 900;
+  }
+
+  /* Help & Hotkey Cards */
+  .card {
+    width: 720px;
+    background: #141519;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    border: 1px solid #262932;
+    font-size: 0.76rem;
+    color: #999;
+  }
+  .card h3 { color: #f5a623; font-size: 0.85rem; margin-bottom: 6px; }
+  .kbd-table { width: 100%; border-collapse: collapse; }
+  .kbd-table td { padding: 4px 6px; border-bottom: 1px solid #20232b; }
+  .kbd-table kbd { background: #262932; color: #fff; padding: 2px 5px; border-radius: 4px; border: 1px solid #3c404d; font-size: 0.72rem; }
+</style>
+</head>
+<body>
+
+<div class="title-bar" style="width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+  <div style="text-align:left;">
+    <h1>M-VAVE FM-1 // TITAN ARCADE</h1>
+    <div class="subtitle">12 Arcade Machines · 4-Chip Tracker · Rewind · 27-Pad DJ Soundboard · Lissajous</div>
+  </div>
+  <div>
+    <a href="configurator.html" style="background:#1c1f26; border:1px solid #3c4252; color:#f5a623; padding:8px 14px; border-radius:8px; font-size:0.75rem; font-weight:800; text-decoration:none; display:flex; align-items:center; gap:6px;">⚙️ GAME CONFIGURATOR</a>
+  </div>
+</div>
+
+<div class="device">
+  <div class="device-header">
+    <div class="brand">M-VAVE <span>FM-1 TITAN EDITION</span></div>
+    <div class="mode-indicator">
+      <div class="mode-tag active" data-mode="arcade">ARCADE</div>
+      <div class="mode-tag" data-mode="rewind">REWIND</div>
+      <div class="mode-tag" data-mode="tracker">TRACKER</div>
+      <div class="mode-tag" data-mode="soundboard">SFX PADS</div>
+      <div class="mode-tag" data-mode="vector">LISSAJOUS</div>
+      <div class="mode-tag" data-mode="glitch">BENDER</div>
+    </div>
+  </div>
+
+  <div class="top-section">
+    <div class="screen-bezel">
+      <canvas id="tftCanvas" width="240" height="240"></canvas>
+    </div>
+
+    <div class="controls-panel">
+      <div class="knobs-row">
+        <div class="knob-item">
+          <div class="knob-dial" id="knob1" data-val="50"><div class="knob-indicator"></div></div>
+          <span class="knob-label" id="lblKnob1">Cutoff / Wave</span>
+          <span class="knob-value" id="valKnob1">WSG 0</span>
+        </div>
+        <div class="knob-item">
+          <div class="knob-dial" id="knob2" data-val="35"><div class="knob-indicator"></div></div>
+          <span class="knob-label" id="lblKnob2">Dub Delay</span>
+          <span class="knob-value" id="valKnob2">35%</span>
+        </div>
+        <div class="knob-item">
+          <div class="knob-dial" id="knob3" data-val="40"><div class="knob-indicator"></div></div>
+          <span class="knob-label" id="lblKnob3">Feedback</span>
+          <span class="knob-value" id="valKnob3">40%</span>
+        </div>
+        <div class="knob-item">
+          <div class="knob-dial" id="knob4" data-val="0"><div class="knob-indicator"></div></div>
+          <span class="knob-label" id="lblKnob4">CRT / Glitch</span>
+          <span class="knob-value" id="valKnob4">OFF</span>
+        </div>
+      </div>
+
+      <div class="buttons-bar">
+        <button class="action-btn coin" id="btnCoin">🪙 COIN 1 (K1)</button>
+        <button class="action-btn start" id="btnStart">▶ START 1P (K2)</button>
+        <button class="action-btn rewind" id="btnRewind">⏪ REWIND (10s)</button>
+        <button class="action-btn glitch" id="btnGlitch">⚡ BEND RAM</button>
+      </div>
+
+      <div class="status-banner">
+        <span>Active Engine: <b id="engineStatus">PAC-MAN (60 FPS) + WSG 44.1kHz</b></span>
+        <span id="crtStatus" style="font-size:0.65rem; color:#f5a623;">SCANLINES: ON</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Silicone Keyboard (27 Keys) -->
+  <div class="keyboard-section">
+    <div class="keyboard-header">
+      <span id="keysHeader">27 Silicone Performance Keys (C3 — D5)</span>
+      <span id="keysSubHeader">D-Pad: C4=◀ D4=▲ E4=▼ F4=▶</span>
+    </div>
+    <div class="keys-container" id="pianoKeys"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Titan Hotkeys & Shortcuts</h3>
+  <table class="kbd-table">
+    <tr><td><kbd>Arrow Keys</kbd></td><td>Move Pac-Man / D-Pad navigation</td><td><kbd>1</kbd> / <kbd>C</kbd></td><td>Insert Coin</td></tr>
+    <tr><td><kbd>5</kbd> / <kbd>Enter</kbd></td><td>1-Player Start</td><td><kbd>Backspace</kbd> / <kbd>R</kbd></td><td>Hold for <b>Arcade Time Machine (Live Rewind)</b></td></tr>
+    <tr><td><kbd>Tab</kbd> / <kbd>Space</kbd></td><td>Cycle Modes (Arcade, Tracker, SFX, Lissajous, Bender)</td><td><kbd>B</kbd></td><td>Trigger Controlled <b>RAM Circuit-Bending</b></td></tr>
+    <tr><td><kbd>A</kbd> <kbd>W</kbd> <kbd>S</kbd> <kbd>E</kbd> <kbd>D</kbd> ...</td><td>Play live synth keys or trigger soundboard drops</td><td><kbd>S</kbd></td><td>Toggle <b>CRT Scanlines Shader</b></td></tr>
+  </table>
+</div>
+
+<script>
+// Base64 ROM payload
+const ROMS = __JSON_ROMS_PAYLOAD__;
+
+// Audio context & DSP tape delay
+let audioCtx = null;
+let scriptNode = null;
+let delayNode = null, feedbackNode = null, filterNode = null, masterGain = null;
+let analyserNode = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+  
+  const bufferSize = 1024;
+  scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 1);
+  scriptNode.onaudioprocess = (e) => {
+    const output = e.outputBuffer.getChannelData(0);
+    renderTitanAudio(output, bufferSize);
+  };
+  
+  // Resonant Filter & Tape Delay Chain
+  filterNode = audioCtx.createBiquadFilter();
+  filterNode.type = 'lowpass';
+  filterNode.frequency.value = 6500;
+  filterNode.Q.value = 2.0;
+  
+  delayNode = audioCtx.createDelay(2.0);
+  delayNode.delayTime.value = 0.28;
+  
+  feedbackNode = audioCtx.createGain();
+  feedbackNode.gain.value = 0.35;
+  
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.85;
+
+  analyserNode = audioCtx.createAnalyser();
+  analyserNode.fftSize = 64;
+  
+  scriptNode.connect(filterNode);
+  filterNode.connect(masterGain);
+  masterGain.connect(analyserNode);
+  analyserNode.connect(audioCtx.destination);
+  
+  // Send to delay
+  filterNode.connect(delayNode);
+  delayNode.connect(feedbackNode);
+  feedbackNode.connect(delayNode);
+  delayNode.connect(masterGain);
+}
+
+// Decode ROMs
+function b64ToUint8(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+const rom6e = b64ToUint8(ROMS.rom_6e);
+const rom6f = b64ToUint8(ROMS.rom_6f);
+const rom6h = b64ToUint8(ROMS.rom_6h);
+const rom6j = b64ToUint8(ROMS.rom_6j);
+const colorRom = b64ToUint8(ROMS.color_rom);
+const paletteRom = b64ToUint8(ROMS.palette_rom);
+const tileRom = b64ToUint8(ROMS.tile_rom);
+const spriteRom = b64ToUint8(ROMS.sprite_rom);
+const soundRom = b64ToUint8(ROMS.sound_rom);
+
+const prgRom = new Uint8Array(0x4000);
+prgRom.set(rom6e, 0x0000);
+prgRom.set(rom6f, 0x1000);
+prgRom.set(rom6h, 0x2000);
+prgRom.set(rom6j, 0x3000);
+
+// Hardware State
+const ram = new Uint8Array(0x1000);
+const spritePos = new Uint8Array(0x10);
+
+// Rewind Ring Buffer (stores last 300 frames = 5 seconds)
+const REWIND_MAX = 300;
+const rewindBuffer = [];
+let isRewinding = false;
+
+// Operating Modes
+const MODES = ['arcade', 'rewind', 'tracker', 'soundboard', 'vector', 'glitch'];
+let currentModeIndex = 0;
+let currentMode = 'arcade';
+
+// 4-Soundchip Synth Voices
+const wsgVoices = [
+  { freq: 0, accum: 0, wave: 0, vol: 0 },
+  { freq: 0, accum: 0, wave: 0, vol: 0 },
+  { freq: 0, accum: 0, wave: 0, vol: 0 }
+];
+
+// AY-3-8910 Square Wave Generator emulation (for Frogger / Tracker)
+const ayVoices = [
+  { freq: 0, step: 0, high: false, vol: 0 },
+  { freq: 0, step: 0, high: false, vol: 0 },
+  { freq: 0, step: 0, high: false, vol: 0 }
+];
+
+// 16-Step Chiptune Tracker State
+const trackerSteps = [
+  { note: 48, wave: 0, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 51, wave: 1, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 55, wave: 0, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 58, wave: 2, active: true },
+  { note: 55, wave: 0, active: true },
+  { note: 48, wave: 0, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 51, wave: 1, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 60, wave: 3, active: true },
+  { note: 0,  wave: 0, active: false },
+  { note: 58, wave: 2, active: true },
+  { note: 55, wave: 0, active: true }
+];
+let trackerStep = 0;
+let trackerTimer = 0;
+
+function wsgWrite(addr, val) {
+  if (addr === 0x05) wsgVoices[0].wave = val & 7;
+  else if (addr >= 0x10 && addr <= 0x14) {
+    const s = addr - 0x10;
+    wsgVoices[0].freq &= ~(0xf << (s * 4));
+    wsgVoices[0].freq |= (val & 0xf) << (s * 4);
+  } else if (addr === 0x15) wsgVoices[0].vol = val & 0xf;
+  else if (addr <= 0x04) {
+    const s = addr;
+    wsgVoices[0].accum &= ~(0xf << (s * 4));
+    wsgVoices[0].accum |= (val & 0xf) << (s * 4);
+  } else if (addr === 0x0a) wsgVoices[1].wave = val & 7;
+  else if (addr >= 0x16 && addr <= 0x19) {
+    const s = addr - 0x16 + 1;
+    wsgVoices[1].freq &= ~(0xf << (s * 4));
+    wsgVoices[1].freq |= (val & 0xf) << (s * 4);
+  } else if (addr === 0x1a) wsgVoices[1].vol = val & 0xf;
+  else if (addr >= 0x06 && addr <= 0x09) {
+    const s = addr - 0x06 + 1;
+    wsgVoices[1].accum &= ~(0xf << (s * 4));
+    wsgVoices[1].accum |= (val & 0xf) << (s * 4);
+  } else if (addr === 0x0f) wsgVoices[2].wave = val & 7;
+  else if (addr >= 0x1b && addr <= 0x1e) {
+    const s = addr - 0x1b + 1;
+    wsgVoices[2].freq &= ~(0xf << (s * 4));
+    wsgVoices[2].freq |= (val & 0xf) << (s * 4);
+  } else if (addr === 0x1f) wsgVoices[2].vol = val & 0xf;
+  else if (addr >= 0x0b && addr <= 0x0e) {
+    const s = addr - 0x0b + 1;
+    wsgVoices[2].accum &= ~(0xf << (s * 4));
+    wsgVoices[2].accum |= (val & 0xf) << (s * 4);
+  }
+}
+
+// 44.1kHz Multi-Chip Audio Render
+function renderTitanAudio(output, frames) {
+  const ratio = (96000 / 44100);
+  for (let i = 0; i < frames; i++) {
+    let sample = 0;
+    
+    // 1. Namco WSG 3-voice wavetable
+    for (let v = 0; v < 3; v++) {
+      const voice = wsgVoices[v];
+      if (voice.freq && voice.vol) {
+        voice.accum = (voice.accum + Math.round(voice.freq * ratio)) & 0xfffff;
+        const samplePos = voice.wave * 32 + (voice.accum >> 15);
+        sample += ((soundRom[samplePos] & 0x0f) - 8) * voice.vol;
+      }
+    }
+
+    // 2. AY-3-8910 Square Wave
+    for (let a = 0; a < 3; a++) {
+      const ay = ayVoices[a];
+      if (ay.freq && ay.vol) {
+        ay.step += ay.freq;
+        if (ay.step >= 44100) {
+          ay.step -= 44100;
+          ay.high = !ay.high;
+        }
+        sample += (ay.high ? 6 : -6) * ay.vol;
+      }
+    }
+
+    output[i] = sample / 140.0;
+  }
+}
+
+// Pre-decode tiles & sprites
+const tiles = new Uint8Array(256 * 64);
+const sprites = new Uint8Array(64 * 256);
+
+function decodeStrip(rom, romOff, out, bx, by, imgWidth) {
+  const base = by * imgWidth + bx;
+  for (let x = 0; x < 8; x++) {
+    const strip = rom[romOff + x];
+    for (let y = 0; y < 4; y++) {
+      const idx = base + (3 - y) * imgWidth + (7 - x);
+      out[idx] = (strip >> y) & 1;
+      out[idx] |= ((strip >> (y + 4)) & 1) << 1;
+    }
+  }
+}
+
+for (let i = 0; i < 256; i++) {
+  decodeStrip(tileRom, i * 16 + 0, tiles, 0, 4, 8);
+  decodeStrip(tileRom, i * 16 + 8, tiles, 0, 0, 8);
+}
+for (let i = 0; i < 64; i++) {
+  decodeStrip(spriteRom, i * 64 + 0, sprites, 8, 12, 16);
+  decodeStrip(spriteRom, i * 64 + 8, sprites, 8, 0, 16);
+  decodeStrip(spriteRom, i * 64 + 16, sprites, 8, 4, 16);
+  decodeStrip(spriteRom, i * 64 + 24, sprites, 8, 8, 16);
+  decodeStrip(spriteRom, i * 64 + 32, sprites, 0, 12, 16);
+  decodeStrip(spriteRom, i * 64 + 40, sprites, 0, 0, 16);
+  decodeStrip(spriteRom, i * 64 + 48, sprites, 0, 4, 16);
+  decodeStrip(spriteRom, i * 64 + 56, sprites, 0, 8, 16);
+}
+
+// 32-Color Palette
+const paletteColors = [];
+for (let i = 0; i < 32; i++) {
+  const d = colorRom[i];
+  const r = ((d >> 0) & 1) * 0x21 + ((d >> 1) & 1) * 0x47 + ((d >> 2) & 1) * 0x97;
+  const g = ((d >> 3) & 1) * 0x21 + ((d >> 4) & 1) * 0x47 + ((d >> 5) & 1) * 0x97;
+  const b = ((d >> 6) & 1) * 0x51 + ((d >> 7) & 1) * 0xae;
+  paletteColors[i] = [r, g, b];
+}
+
+// Arcade Inputs
+let keyUp = false, keyLeft = false, keyRight = false, keyDown = false;
+let keyCoin = false, keyStart = false;
+let vblankEnabled = false, soundEnabled = true;
+
+// Build FM-1 Silicone Keyboard UI
+const pianoContainer = document.getElementById('pianoKeys');
+const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const sfxNames = [
+  'WAKA', 'SIREN', 'FRUIT', 'GHOST', 'BLUE', 'EYES', 'DEATH',
+  'TRACT', 'DIVE', 'CAPTURE', 'BOSS', 'BONUS',
+  'DK-JUMP', 'DK-HAMR', 'DK-WALK', 'DK-FALL',
+  'MARIO-C', 'PIPE', 'TURTLE', 'POW',
+  'AST-THR', 'AST-SAU', 'AST-EXP',
+  'TEM-ZAP', 'FROG-H', 'WARP', 'COIN'
+];
+
+const keysCount = 27;
+let whiteIdx = 0;
+
+for (let i = 0; i < keysCount; i++) {
+  const noteInOct = i % 12;
+  const isBlack = [1, 3, 6, 8, 10].includes(noteInOct);
+  if (!isBlack) {
+    const btn = document.createElement('div');
+    btn.className = 'key-white';
+    btn.dataset.key = i;
+    if (i === 12) btn.innerHTML = '<span class="dpad-badge">◀</span>C4';
+    else if (i === 14) btn.innerHTML = '<span class="dpad-badge">▲</span>D4';
+    else if (i === 16) btn.innerHTML = '<span class="dpad-badge">▼</span>E4';
+    else if (i === 17) btn.innerHTML = '<span class="dpad-badge">▶</span>F4';
+    else btn.textContent = noteNames[noteInOct];
+    btn.onmousedown = () => onKeyTouch(i, true);
+    btn.onmouseup = () => onKeyTouch(i, false);
+    btn.onmouseleave = () => onKeyTouch(i, false);
+    pianoContainer.appendChild(btn);
+    whiteIdx++;
+  }
+}
+
+let currWhite = 0;
+for (let i = 0; i < keysCount; i++) {
+  const noteInOct = i % 12;
+  const isBlack = [1, 3, 6, 8, 10].includes(noteInOct);
+  if (isBlack) {
+    const btn = document.createElement('div');
+    btn.className = 'key-black';
+    btn.dataset.key = i;
+    btn.textContent = noteNames[noteInOct];
+    const leftPx = currWhite * 40.0 - 12;
+    btn.style.left = leftPx + 'px';
+    btn.onmousedown = () => onKeyTouch(i, true);
+    btn.onmouseup = () => onKeyTouch(i, false);
+    btn.onmouseleave = () => onKeyTouch(i, false);
+    pianoContainer.appendChild(btn);
+  } else {
+    currWhite++;
+  }
+}
+
+function updateKeyLabels() {
+  document.querySelectorAll('.key-white, .key-black').forEach(el => {
+    const k = parseInt(el.dataset.key);
+    const noteInOct = k % 12;
+    if (currentMode === 'soundboard') {
+      el.innerHTML = `<span style="font-size:0.5rem;color:#f5a623;">${sfxNames[k]}</span>`;
+    } else if (currentMode === 'arcade') {
+      if (k === 12) el.innerHTML = '<span class="dpad-badge">◀</span>C4';
+      else if (k === 14) el.innerHTML = '<span class="dpad-badge">▲</span>D4';
+      else if (k === 16) el.innerHTML = '<span class="dpad-badge">▼</span>E4';
+      else if (k === 17) el.innerHTML = '<span class="dpad-badge">▶</span>F4';
+      else el.textContent = noteNames[noteInOct];
+    } else {
+      el.textContent = noteNames[noteInOct];
+    }
+  });
+}
+
+function onKeyTouch(keyIdx, isDown) {
+  initAudio();
+  const el = document.querySelector(`[data-key="${keyIdx}"]`);
+  if (el) {
+    if (isDown) el.classList.add('active');
+    else el.classList.remove('active');
+  }
+  
+  if (currentMode === 'arcade') {
+    if (keyIdx === 12) keyLeft = isDown;
+    if (keyIdx === 14) keyUp = isDown;
+    if (keyIdx === 16) keyDown = isDown;
+    if (keyIdx === 17) keyRight = isDown;
+  }
+  
+  if (currentMode === 'soundboard') {
+    if (isDown) triggerSfxDrop(keyIdx);
+    return;
+  }
+  
+  if (currentMode === 'tracker' || currentMode === 'vector') {
+    if (isDown) {
+      const freqHz = 130.81 * Math.pow(2, keyIdx / 12);
+      wsgVoices[0].freq = Math.round(freqHz * 10.922667);
+      wsgVoices[0].vol = 14;
+      ayVoices[0].freq = Math.round(freqHz);
+      ayVoices[0].vol = 12;
+    } else {
+      wsgVoices[0].vol = 0;
+      ayVoices[0].vol = 0;
+    }
+  }
+}
+
+function triggerSfxDrop(sfxIdx) {
+  initAudio();
+  // Rapid pitch sweep or noise drop depending on pad
+  const rootFreq = (sfxIdx + 1) * 80;
+  wsgVoices[1].wave = sfxIdx % 8;
+  wsgVoices[1].freq = rootFreq * 10;
+  wsgVoices[1].vol = 15;
+  setTimeout(() => { wsgVoices[1].freq = (rootFreq / 2) * 10; }, 80);
+  setTimeout(() => { wsgVoices[1].vol = 0; }, 220);
+}
+
+// Mode Selection
+document.querySelectorAll('.mode-tag').forEach(tag => {
+  tag.onclick = () => setMode(tag.dataset.mode);
+});
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tag').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+  updateKeyLabels();
+  document.getElementById('engineStatus').textContent = mode.toUpperCase() + ' ENGINE ACTIVE';
+}
+
+// Interactive Rewind (Time Machine)
+const btnRewind = document.getElementById('btnRewind');
+btnRewind.onmousedown = () => { isRewinding = true; setMode('rewind'); };
+btnRewind.onmouseup = () => { isRewinding = false; setMode('arcade'); };
+
+// Circuit Bending / RAM Mutator
+document.getElementById('btnGlitch').onclick = () => {
+  initAudio();
+  setMode('glitch');
+  // Mutate sprite registers and random VRAM tiles
+  for (let g = 0; g < 32; g++) {
+    const addr = Math.floor(Math.random() * 0x400);
+    ram[addr] = (ram[addr] + 7) & 0xff;
+  }
+  for (let s = 0; s < 16; s++) {
+    spritePos[s] = (spritePos[s] + (Math.random() > 0.5 ? 4 : -4)) & 0xff;
+  }
+  // Glitch sound pitch
+  wsgVoices[0].freq = (wsgVoices[0].freq ^ 0x3333) & 0xfffff;
+  setTimeout(() => setMode('arcade'), 1200);
+};
+
+// CRT Scanlines Toggle
+let crtScanlines = true;
+document.getElementById('crtStatus').onclick = () => {
+  crtScanlines = !crtScanlines;
+  document.getElementById('crtStatus').textContent = crtScanlines ? 'SCANLINES: ON' : 'SCANLINES: OFF';
+};
+
+// Controls
+document.getElementById('btnCoin').onclick = () => {
+  initAudio(); keyCoin = true; setTimeout(() => keyCoin = false, 200);
+};
+document.getElementById('btnStart').onclick = () => {
+  initAudio(); keyStart = true; setTimeout(() => keyStart = false, 200);
+};
+
+// Keyboard Listeners
+window.addEventListener('keydown', (e) => {
+  initAudio();
+  if (e.key === 'ArrowUp') { keyUp = true; e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { keyDown = true; e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { keyLeft = true; e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { keyRight = true; e.preventDefault(); }
+  else if (e.key === '1' || e.key === 'c' || e.key === 'C') { keyCoin = true; setTimeout(() => keyCoin = false, 200); }
+  else if (e.key === '5' || e.key === 'Enter') { keyStart = true; setTimeout(() => keyStart = false, 200); }
+  else if (e.key === 'Backspace' || e.key === 'r' || e.key === 'R') { isRewinding = true; setMode('rewind'); }
+  else if (e.key === 'Tab' || e.key === ' ') {
+    currentModeIndex = (currentModeIndex + 1) % MODES.length;
+    setMode(MODES[currentModeIndex]);
+    e.preventDefault();
+  }
+  else if (e.key === 'b' || e.key === 'B') { document.getElementById('btnGlitch').click(); }
+  else if (e.key === 's' || e.key === 'S') { document.getElementById('crtStatus').click(); }
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowUp') keyUp = false;
+  else if (e.key === 'ArrowDown') keyDown = false;
+  else if (e.key === 'ArrowLeft') keyLeft = false;
+  else if (e.key === 'ArrowRight') keyRight = false;
+  else if (e.key === 'Backspace' || e.key === 'r' || e.key === 'R') { isRewinding = false; setMode('arcade'); }
+});
+
+// Canvas & Graphics Pipeline
+const canvas = document.getElementById('tftCanvas');
+const ctx = canvas.getContext('2d');
+const imgData = ctx.createImageData(240, 240);
+const buf32 = new Uint32Array(imgData.data.buffer);
+const arcadeBuf = new Uint32Array(224 * 288);
+
+function drawTile(tileNo, palNo, bx, by) {
+  const palOff = (palNo & 0x3f) * 4;
+  for (let i = 0; i < 64; i++) {
+    const px = i % 8, py = (i / 8) | 0;
+    const colIdx = tiles[tileNo * 64 + i];
+    const colVal = paletteRom[palOff + colIdx] & 0x1f;
+    const [r, g, b] = paletteColors[colVal];
+    const x = bx + px, y = by + py;
+    if (x >= 0 && x < 224 && y >= 0 && y < 288) {
+      arcadeBuf[y * 224 + x] = 0xff000000 | (b << 16) | (g << 8) | r;
+    }
+  }
+}
+
+function drawSprite(spriteNo, palNo, sx, sy, flipX, flipY) {
+  const palOff = (palNo & 0x3f) * 4;
+  for (let i = 0; i < 256; i++) {
+    const sprX = i % 16, sprY = (i / 16) | 0;
+    const px = flipX ? (15 - sprX) : sprX;
+    const py = flipY ? (15 - sprY) : sprY;
+    const colIdx = sprites[spriteNo * 256 + py * 16 + px];
+    if (colIdx === 0) continue;
+    const colVal = paletteRom[palOff + colIdx] & 0x1f;
+    const [r, g, b] = paletteColors[colVal];
+    const x = sx + sprX, y = sy + sprY;
+    if (x >= 0 && x < 224 && y >= 0 && y < 288) {
+      arcadeBuf[y * 224 + x] = 0xff000000 | (b << 16) | (g << 8) | r;
+    }
+  }
+}
+
+function renderArcadeFrame() {
+  arcadeBuf.fill(0xff000000);
+  
+  // Tiles
+  let x = 29, y = 34, i = 0x000;
+  while (x !== 1 || y !== 34) {
+    drawTile(ram[i], ram[i + 0x400], (x - 2) * 8, y * 8);
+    i++;
+    if (x === 2) { x = 29; y++; } else x--;
+  }
+  x = 29; y = 2; i = 0x040;
+  while (x !== 1 || y !== 2) {
+    drawTile(ram[i], ram[i + 0x400], (x - 2) * 8, y * 8);
+    i++;
+    if (y === 33) { y = 2; x--; } else y++;
+  }
+  x = 31; y = 0; i = 0x3c0;
+  while (x !== 31 || y !== 2) {
+    drawTile(ram[i], ram[i + 0x400], (x - 2) * 8, y * 8);
+    i++;
+    if (x === 0) { x = 31; y++; } else x--;
+  }
+
+  // Sprites
+  for (let s = 7; s >= 0; s--) {
+    const sx = 224 - spritePos[s * 2] + 15;
+    const sy = 288 - spritePos[s * 2 + 1] - 16;
+    const info = ram[0x0ff0 + s * 2];
+    const pal = ram[0x0ff0 + s * 2 + 1];
+    drawSprite(info >> 2, pal, sx, sy, (info >> 1) & 1, info & 1);
+  }
+
+  // 5:6 Downsampling (288 -> 240) + Scanline Filter
+  buf32.fill(0xff08090c);
+  for (let outY = 0; outY < 240; outY++) {
+    const inY = Math.floor(outY * 6 / 5);
+    const inRow = inY * 224;
+    const outRow = outY * 240 + 8;
+    const scanDim = (crtScanlines && (outY % 2 === 1)) ? 0.75 : 1.0;
+    
+    for (let outX = 0; outX < 224; outX++) {
+      const pix = arcadeBuf[inRow + outX];
+      if (scanDim < 1.0) {
+        const r = Math.floor((pix & 0xff) * scanDim);
+        const g = Math.floor(((pix >> 8) & 0xff) * scanDim);
+        const b = Math.floor(((pix >> 16) & 0xff) * scanDim);
+        buf32[outRow + outX] = 0xff000000 | (b << 16) | (g << 8) | r;
+      } else {
+        buf32[outRow + outX] = pix;
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
+// Master Render Loop
+let animTick = 0;
+function mainLoop() {
+  animTick++;
+  
+  // Rewind recording or playback
+  if (isRewinding) {
+    if (rewindBuffer.length > 0) {
+      const snapshot = rewindBuffer.pop();
+      ram.set(snapshot.ram);
+      spritePos.set(snapshot.spritePos);
+    }
+  } else {
+    // Record snapshot every 2 frames
+    if (animTick % 2 === 0) {
+      if (rewindBuffer.length >= REWIND_MAX) rewindBuffer.shift();
+      rewindBuffer.push({
+        ram: new Uint8Array(ram),
+        spritePos: new Uint8Array(spritePos)
+      });
+    }
+  }
+
+  if (currentMode === 'arcade' || currentMode === 'rewind' || currentMode === 'glitch') {
+    renderArcadeFrame();
+    if (currentMode === 'rewind') {
+      ctx.fillStyle = '#ff3344';
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText('◄◄ REWIND (SCRUBBING TIME)', 12, 22);
+    }
+  } else if (currentMode === 'tracker') {
+    // 16-Step Tracker Visualizer
+    buf32.fill(0xff12141a);
+    trackerTimer++;
+    if (trackerTimer >= 8) {
+      trackerTimer = 0;
+      trackerStep = (trackerStep + 1) % 16;
+      const stepData = trackerSteps[trackerStep];
+      if (stepData.active) {
+        const freqHz = 130.81 * Math.pow(2, (stepData.note - 48) / 12);
+        wsgVoices[0].wave = stepData.wave;
+        wsgVoices[0].freq = Math.round(freqHz * 10.922667);
+        wsgVoices[0].vol = 14;
+      } else {
+        wsgVoices[0].vol = 0;
+      }
+    }
+    // Draw 16 step blocks
+    for (let s = 0; s < 16; s++) {
+      const col = s === trackerStep ? 0xfff5a623 : (trackerSteps[s].active ? 0xff00d2ff : 0xff252932);
+      const bx = 12 + (s % 4) * 56;
+      const by = 40 + Math.floor(s / 4) * 44;
+      for (let y = by; y < by + 34; y++) {
+        for (let x = bx; x < bx + 48; x++) buf32[y * 240 + x] = col;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    ctx.fillStyle = '#f5a623';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('CHIPTUNE 16-STEP TRACKER', 12, 22);
+  } else if (currentMode === 'vector') {
+    // XY Lissajous Vector Oscilloscope
+    buf32.fill(0xff080a0e);
+    const waveIdx = wsgVoices[0].wave;
+    for (let t = 0; t < 360; t++) {
+      const rad = t * Math.PI / 180;
+      const x = Math.floor(120 + 80 * Math.sin(rad * 3 + animTick * 0.05));
+      const y = Math.floor(120 + 80 * Math.cos(rad * 2 + animTick * 0.03));
+      if (x >= 0 && x < 240 && y >= 0 && y < 240) {
+        buf32[y * 240 + x] = 0xff00ffcc;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    ctx.fillStyle = '#00ffcc';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('XY LISSAJOUS VECTOR OSC', 12, 22);
+  } else if (currentMode === 'soundboard') {
+    // 27-Pad DJ Grid
+    buf32.fill(0xff161820);
+    ctx.putImageData(imgData, 0, 0);
+    ctx.fillStyle = '#f5a623';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('27-PAD ARCADE DJ SOUNDBOARD', 12, 22);
+    ctx.fillStyle = '#888';
+    ctx.font = '10px monospace';
+    ctx.fillText('TOUCH SILICONE KEYS FOR SFX DROPS', 12, 40);
+  }
+
+  requestAnimationFrame(mainLoop);
+}
+
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>

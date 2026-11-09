@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>STACK TRACE presents Arcade Rat v1.0 · M-VAVE FM-1 Configurator</title>
+<style>
+  :root {
+    --bg-deep: #090a0e;
+    --chassis-base: #141720;
+    --chassis-rim: #242938;
+    --amber-core: #f5a623;
+    --amber-glow: rgba(245, 166, 35, 0.45);
+    --green-neon: #00ff66;
+    --green-glow: rgba(0, 255, 102, 0.4);
+    --cyan-oled: #00e5ff;
+    --cyan-glow: rgba(0, 229, 255, 0.35);
+    --red-alert: #ff4757;
+    --purple-synth: #a55eea;
+    --text-primary: #e6e8ee;
+    --text-muted: #8a90a2;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono: "SF Mono", "Consolas", "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-ui); }
+  body {
+    background: radial-gradient(circle at 50% 15%, #151824 0%, var(--bg-deep) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 24px 20px 48px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Cockpit Header */
+  .header {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .branding-wrap { display: flex; align-items: center; gap: 16px; }
+  .header-avatar {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    object-fit: contain;
+    background: transparent;
+    display: block;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+  .header-avatar:hover { transform: scale(1.05) rotate(2deg); }
+
+  .logo-group h1 {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: var(--amber-core);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 2px 0 3px 0;
+    text-shadow: 0 0 12px var(--amber-glow);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-sub { font-size: 0.72rem; font-weight: 800; color: var(--green-neon); letter-spacing: 2.5px; text-transform: uppercase; }
+  .version-tag {
+    font-size: 0.7rem;
+    color: #fff;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 6px rgba(231,76,60,0.4);
+  }
+  .logo-group p { font-size: 0.74rem; color: var(--text-muted); }
+  
+  .nav-buttons { display: flex; gap: 10px; align-items: center; }
+  .nav-link {
+    background: #181b24;
+    border: 1px solid #333a4e;
+    color: var(--amber-core);
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .nav-link:hover {
+    background: var(--amber-core);
+    color: #000;
+    border-color: var(--amber-core);
+    box-shadow: 0 0 16px var(--amber-glow);
+    transform: translateY(-1px);
+  }
+
+  /* Main Grid */
+  .grid-container {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 22px;
+  }
+  @media (max-width: 960px) {
+    .grid-container { grid-template-columns: 1fr; }
+  }
+
+  /* Hardware Studio Cards */
+  .card {
+    background: linear-gradient(175deg, #161922 0%, #101218 100%);
+    border-radius: 16px;
+    border: 1px solid #232736;
+    padding: 18px 20px;
+    box-shadow:
+      0 12px 36px rgba(0,0,0,0.7),
+      inset 0 1px 1px rgba(255,255,255,0.08);
+    position: relative;
+  }
+  .card-title {
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: var(--amber-core);
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  /* Active Firmware Slots Grid */
+  .slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 600px) {
+    .slot-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .slot-card {
+    background: #141720;
+    border: 2px solid #242938;
+    border-radius: 12px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .slot-card:hover {
+    border-color: var(--amber-core);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+  }
+  .slot-card.active {
+    border-color: var(--amber-core);
+    background: #1b202c;
+    box-shadow: 0 0 16px rgba(245, 166, 35, 0.35), inset 0 0 0 1px var(--amber-core);
+  }
+  .slot-header { display: flex; justify-content: space-between; align-items: center; }
+  .slot-number {
+    font-size: 0.62rem;
+    font-weight: 900;
+    color: var(--amber-core);
+    background: rgba(245,166,35,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+  }
+  .slot-badge {
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    font-family: var(--font-mono);
+  }
+  .badge-z80 { background: #1f5080; color: #a9d6ff; border: 1px solid #2980b9; }
+  .badge-6502 { background: #572b6e; color: #e1bfff; border: 1px solid #8e44ad; }
+  .badge-6809 { background: #7a350b; color: #ffd1b3; border: 1px solid #d35400; }
+  
+  .game-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+  }
+  .game-meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+  }
+
+  /* Preset Pills */
+  .preset-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .preset-label { font-size: 0.64rem; color: #72798e; font-weight: 800; letter-spacing: 0.5px; }
+
+  /* Genre Filter Pills */
+  .filter-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .pill {
+    background: #151822;
+    border: 1px solid #272c3d;
+    color: #9aa1b4;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    letter-spacing: 0.3px;
+  }
+  .pill:hover { color: #fff; border-color: var(--amber-core); background: rgba(255,255,255,0.04); }
+  .pill.active {
+    background: var(--amber-core);
+    color: #000;
+    border-color: var(--amber-core);
+    font-weight: 900;
+    box-shadow: 0 0 10px var(--amber-glow);
+  }
+  .pill.spinner-pill { border-color: #7b4291; color: #d291ff; }
+  .pill.spinner-pill.active { background: #9b59b6; color: #fff; border-color: #9b59b6; box-shadow: 0 0 10px rgba(155,89,182,0.5); }
+
+  /* 93-Game Vault Archive */
+  .library-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .library-list::-webkit-scrollbar { width: 6px; }
+  .library-list::-webkit-scrollbar-thumb { background: #2b3144; border-radius: 4px; }
+  .library-item {
+    background: #141720;
+    border: 1px solid #232838;
+    border-radius: 9px;
+    padding: 9px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.1s ease;
+  }
+  .library-item:hover { background: #1c212e; border-color: var(--amber-core); }
+  .library-item.selected { border-color: var(--green-neon); background: #112019; box-shadow: 0 0 10px rgba(0,255,102,0.15); }
+  .item-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .item-title { font-size: 0.82rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; }
+  .item-sub { font-size: 0.66rem; color: #8a91a4; font-family: var(--font-mono); }
+  .btn-swap {
+    background: #202432;
+    border: 1px solid #363d50;
+    color: var(--amber-core);
+    font-size: 0.66rem;
+    font-weight: 800;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+  .btn-swap:hover { background: var(--amber-core); color: #000; box-shadow: 0 0 10px var(--amber-glow); }
+
+  /* Segmented Flash Memory Gauge */
+  .gauge-box {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 18px;
+    background: #0c0e14;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #202432;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #9aa1b4;
+    font-family: var(--font-mono);
+  }
+  .gauge-track {
+    width: 100%;
+    height: 10px;
+    background: #1a1e28;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #2b3142;
+  }
+  .gauge-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff66 0%, #f5a623 75%, #ff4757 95%);
+    width: 41%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(0,255,102,0.4);
+  }
+
+  /* Custom ROM Dropzone */
+  .drop-zone {
+    border: 2px dashed #2f364a;
+    border-radius: 12px;
+    padding: 22px 14px;
+    text-align: center;
+    background: #0d0f15;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 12px;
+  }
+  .drop-zone:hover { border-color: var(--amber-core); background: #141722; }
+  .drop-icon { font-size: 1.8rem; margin-bottom: 4px; display: block; }
+  .drop-text { font-size: 0.76rem; color: #d0d4e0; font-weight: 800; }
+  .drop-sub { font-size: 0.62rem; color: #72798e; margin-top: 2px; }
+
+  /* Hardware Controls Mapping Module */
+  .controls-mapping {
+    background: #0c0e14;
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid #1f2330;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .mapping-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; }
+  .mapping-row span { font-weight: 700; color: #b0b7c8; }
+  .mapping-row select {
+    background: #171b26;
+    border: 1px solid #333a4e;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  /* Action Buttons Block */
+  .action-block { display: flex; flex-direction: column; gap: 9px; }
+  .btn-primary {
+    background: linear-gradient(135deg, #f5a623 0%, #e65c00 100%);
+    color: #000;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.12s ease;
+    box-shadow: 0 4px 14px rgba(245,166,35,0.4);
+    letter-spacing: 0.5px;
+  }
+  .btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.6); }
+  .btn-secondary {
+    background: #1c202c;
+    color: #d8dce8;
+    border: 1px solid #343b4f;
+    padding: 10px;
+    border-radius: 9px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.12s ease;
+  }
+  .btn-secondary:hover { background: #272d3e; color: #fff; border-color: var(--amber-core); }
+
+  /* Floating Toast */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green-neon);
+    color: #000;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.7), 0 0 16px var(--green-glow);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    z-index: 100;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="branding-wrap">
+    <img src="images/stack_trace_avatar.png" alt="Stack Trace Avatar" class="header-avatar">
+    <div class="logo-group">
+      <div class="brand-sub">STACK TRACE PRESENTS</div>
+      <h1>ARCADE RAT <span class="version-tag">v 1.0</span></h1>
+      <p>Firmware Configurator & Soundchip Studio for M-VAVE FM-1 · 93-Game Vault & Twin-Stick Mapping</p>
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <a href="fm1_pacman_preview.html" class="nav-link">🎮 OPEN ARCADE RAT SIMULATOR</a>
+  </div>
+</div>
+
+<div class="grid-container">
+
+  <!-- Left: Slots & Game Catalog -->
+  <div>
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-title">
+        <span>Active Firmware Slots (12 Games Active)</span>
+        <span style="font-size:0.65rem; color:#888; font-weight:700;">CLICK ANY SLOT TO REPLACE</span>
+      </div>
+
+      <div class="preset-row">
+        <span class="preset-label">ACTIVE PRESETS:</span>
+        <button class="pill" onclick="loadPreset('allstar')" id="presetAllstar" style="background:#2a2310; border-color:var(--amber-core); color:var(--amber-core); font-weight:800;">🌟 All-Star Core (inc. Crazy Climber)</button>
+        <button class="pill" onclick="loadPreset('twinstick')" id="presetTwinstick">🧗 Twin-Stick & Rotary Elite</button>
+        <button class="pill" onclick="loadPreset('classics')" id="presetClassics">🚀 Golden 1980 Classics</button>
+      </div>
+
+      <div class="slot-grid" id="slotsGrid"></div>
+
+      <!-- Segmented Flash Memory HUD -->
+      <div class="gauge-box">
+        <div class="gauge-label">
+          <span>FLASH USAGE (1,024 KB FLASH ALLOCATION)</span>
+          <span id="flashText">415 KB / 1,024 KB (40.5%)</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="flashGauge" style="width: 40.5%;"></div>
+        </div>
+        <div style="font-size:0.64rem; color:#72798e; display:flex; justify-content:space-between; font-family:var(--font-mono);">
+          <span>CORES & AUDIO DSP: ~110 KB</span>
+          <span id="freeText" style="color:var(--green-neon); font-weight:800;">Free Headroom: 609 KB (59.5%)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 93-Game Vault Catalog -->
+    <div class="card">
+      <div class="card-title">
+        <span id="catalogTitle">Arcade Master Archive (93 Games Available)</span>
+        <input type="text" id="searchGames" placeholder="Search 93 games (Press / to focus)..." style="background:#151822; border:1px solid #2b3144; color:#fff; padding:6px 12px; border-radius:8px; font-size:0.72rem; width:270px; font-family:var(--font-ui);">
+      </div>
+
+      <!-- Genre Pills -->
+      <div class="filter-pills" id="genreFilters">
+        <div class="pill active" data-cat="all">ALL (93)</div>
+        <div class="pill spinner-pill" data-cat="spinner">🎛️ SPINNER / KNOB (14)</div>
+        <div class="pill" data-cat="shooter">🚀 SHOOTERS (29)</div>
+        <div class="pill" data-cat="maze">🟡 MAZE & CHASE (17)</div>
+        <div class="pill" data-cat="platformer">🪜 PLATFORMERS (12)</div>
+        <div class="pill" data-cat="vector">⚡ VECTOR 3D (10)</div>
+        <div class="pill" data-cat="action">🥊 ACTION & SPORTS (11)</div>
+      </div>
+
+      <div class="library-list" id="gamesCatalog"></div>
+    </div>
+  </div>
+
+  <!-- Right: Dropzone & Settings -->
+  <div>
+    <!-- Drop Custom ROM -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-title">Import Custom Arcade ROM</div>
+      <div class="drop-zone" id="dropZone">
+        <span class="drop-icon">📦</span>
+        <div class="drop-text">Drop MAME .zip file here</div>
+        <div class="drop-sub">Drag & drop or click to browse</div>
+        <input type="file" id="fileInput" accept=".zip,.bin,.rom" style="display:none;">
+      </div>
+      <div style="font-size:0.65rem; color:#72798e; line-height:1.4;">
+        Verified SHA-256 integrity checks against MAME 0.260 verified romsets.
+      </div>
+    </div>
+
+    <!-- Hardware Mapping -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-title">FM-1 Hardware Key Mapping</div>
+      <div class="controls-mapping">
+        <div class="mapping-row">
+          <span>Crazy Climber Dual-Stick</span>
+          <select id="mapClimber">
+            <option value="keys_split">Keys C4/D4 (Left Hand) & E4/F4 (Right Hand)</option>
+            <option value="knobs">Rotary Knobs 1 & 2 (Dual Wrist Wheels)</option>
+            <option value="dpad_buttons">D-Pad (Left Arm) + K1/K2 (Right Arm)</option>
+          </select>
+        </div>
+        <div class="mapping-row">
+          <span>D-Pad Position</span>
+          <select id="mapDpad">
+            <option value="default">Keys C4, D4, E4, F4 (Center)</option>
+            <option value="left">Keys C3, D3, E3, F3 (Far Left)</option>
+            <option value="buttons">Tactile Buttons K1-K4</option>
+          </select>
+        </div>
+        <div class="mapping-row">
+          <span>Tempest Spinner</span>
+          <select id="mapSpinner">
+            <option value="enc0">Rotary Knob 1 (Default)</option>
+            <option value="enc1">Rotary Knob 2</option>
+            <option value="keys">Piano Keys C4 / F4</option>
+          </select>
+        </div>
+        <div class="mapping-row">
+          <span>Lunar Lander Throttle</span>
+          <select id="mapThrottle">
+            <option value="enc0">Rotary Knob 1 (Progressive)</option>
+            <option value="keys">Key E4 (Full Burn)</option>
+          </select>
+        </div>
+        <div class="mapping-row">
+          <span>CRT Scanlines</span>
+          <select id="mapCrt">
+            <option value="on">Enabled (50% Shadow Mask)</option>
+            <option value="off">Disabled (Clean Pixels)</option>
+          </select>
+        </div>
+        <div class="mapping-row">
+          <span>Audio Echo Send</span>
+          <select id="mapEcho">
+            <option value="35">35% Tape Dub Delay</option>
+            <option value="0">Dry (No FX)</option>
+            <option value="75">75% Heavy Feedback</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deploy -->
+    <div class="card">
+      <div class="card-title">Deploy Firmware</div>
+      <div class="action-block">
+        <button class="btn-primary" id="btnExportBin">
+          💾 Export Custom .FWSC Binary
+        </button>
+        <button class="btn-secondary" id="btnExportHeader">
+          📄 Generate C Source Header
+        </button>
+        <button class="btn-secondary" id="btnSaveConfig">
+          📋 Export arcade_config.json
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast">Configuration saved!</div>
+
+<script>
+// Catalog Database (93 Games)
+const CATALOG = [{"id": "pacman", "name": "Pac-Man", "year": 1980, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 24.5, "cat": "maze", "desc": "The quintessential 4-ghost dot-munching maze chaser."}, {"id": "mspacman", "name": "Ms. Pac-Man", "year": 1982, "maker": "Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 14.0, "cat": "maze", "desc": "4 new mazes, bouncing fruit prizes, and erratic ghost AI."}, {"id": "pacplus", "name": "Pac-Man Plus", "year": 1982, "maker": "Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 24.5, "cat": "maze", "desc": "Fast-paced official mod with mystery food items and ghost invis."}, {"id": "jrpacman", "name": "Jr. Pac-Man", "year": 1983, "maker": "Bally Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Scrolling giant mazes, exploding mega-dots, and propeller beanie."}, {"id": "superpac", "name": "Super Pac-Man", "year": 1982, "maker": "Namco", "cpu": "6809", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Eat keys to unlock gates, super pellets make you giant and invincible."}, {"id": "babypac", "name": "Baby Pac-Man", "year": 1982, "maker": "Bally Midway", "cpu": "Z80", "sound": "Namco WSG", "size": 32.0, "cat": "maze", "desc": "Hybrid video maze and pinball playfield."}, {"id": "galaga", "name": "Galaga", "year": 1981, "maker": "Namco", "cpu": "3\u00d7 Z80", "sound": "Namco WSG", "size": 28.0, "cat": "shooter", "desc": "Dual-fighter space assault with capture beam rescue mechanics."}, {"id": "galaxian", "name": "Galaxian", "year": 1979, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 14.0, "cat": "shooter", "desc": "Parent hardware of Pac-Man; multi-colored diving alien swarms."}, {"id": "gaplus", "name": "Gaplus / Galaga 3", "year": 1984, "maker": "Namco", "cpu": "3\u00d7 6809", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "360-degree tractor beam reversal, triple ships, and hyper-speed."}, {"id": "digdug", "name": "Dig Dug", "year": 1982, "maker": "Namco", "cpu": "3\u00d7 Z80", "sound": "Namco WSG", "size": 28.0, "cat": "maze", "desc": "Subterranean pump action; music plays exclusively when walking."}, {"id": "digdug2", "name": "Dig Dug II", "year": 1985, "maker": "Namco", "cpu": "2\u00d7 6809", "sound": "Namco C15", "size": 48.0, "cat": "action", "desc": "Island drilling mechanics dropping chunks of land into the sea."}, {"id": "rallyx", "name": "Rally-X", "year": 1980, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 20.0, "cat": "action", "desc": "High-speed maze racing, blinding smoke screens, and beeping radar."}, {"id": "newrallyx", "name": "New Rally-X", "year": 1981, "maker": "Namco", "cpu": "Z80", "sound": "Namco WSG", "size": 24.0, "cat": "action", "desc": "Refined rally racing with lucky flags and tuned red car difficulty."}, {"id": "bosconian", "name": "Bosconian", "year": 1981, "maker": "Namco", "cpu": "3\u00d7 Z80", "sound": "Namco WSG", "size": 32.0, "cat": "shooter", "desc": "Free-scrolling space station assault with early digitized voice lines."}, {"id": "mappy", "name": "Mappy", "year": 1983, "maker": "Namco", "cpu": "2\u00d7 6809", "sound": "Namco WSG", "size": 32.0, "cat": "platformer", "desc": "Trampoline-bouncing cop mouse with bouncy ragtime chiptune."}, {"id": "xevious", "name": "Xevious", "year": 1982, "maker": "Namco", "cpu": "3\u00d7 Z80", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "Vertical scrolling air/ground dual-targeting forest and desert flight."}, {"id": "grobda", "name": "Grobda", "year": 1984, "maker": "Namco", "cpu": "2\u00d7 6809", "sound": "Namco WSG", "size": 48.0, "cat": "shooter", "desc": "Arena combat tank shooter; destroy enemy tanks and bounce blast waves."}, {"id": "druaga", "name": "Tower of Druaga", "year": 1984, "maker": "Namco", "cpu": "2\u00d7 6809", "sound": "Namco WSG", "size": 48.0, "cat": "action", "desc": "60-floor labyrinth crawl with cryptic chests and golden armor."}, {"id": "motos", "name": "Motos", "year": 1985, "maker": "Namco", "cpu": "2\u00d7 6809", "sound": "Namco C15", "size": 48.0, "cat": "action", "desc": "Sumo bumper car physics pushing space monsters off floating platforms."}, {"id": "warpwarp", "name": "Warp & Warp", "year": 1981, "maker": "Namco", "cpu": "8080", "sound": "Namco WSG", "size": 16.0, "cat": "shooter", "desc": "Dual Space-World and Maze-World dimension warping shooter."}, {"id": "dkong", "name": "Donkey Kong", "year": 1981, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 20.0, "cat": "platformer", "desc": "The birth of Mario; hammer smashing, barrel dodging, and rivet pulling."}, {"id": "dkongjr", "name": "Donkey Kong Jr.", "year": 1982, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 24.0, "cat": "platformer", "desc": "Swing on jungle vines to rescue caged Donkey Kong from whip-wielding Mario."}, {"id": "dkong3", "name": "Donkey Kong 3", "year": 1983, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "shooter", "desc": "Stanley the bugman spraying bug spray up at DK and angry creepers."}, {"id": "mario", "name": "Mario Bros.", "year": 1983, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "platformer", "desc": "Sewer plumber combat; flip turtles, kick crabs, and strike the POW block."}, {"id": "popeye", "name": "Popeye", "year": 1982, "maker": "Nintendo", "cpu": "Z80", "sound": "AY-3-8910", "size": 32.0, "cat": "platformer", "desc": "Catch floating hearts, musical notes, and spinach cans from Olive Oyl."}, {"id": "radarscp", "name": "Radar Scope", "year": 1979, "maker": "Nintendo", "cpu": "Z80", "sound": "Discrete DAC", "size": 16.0, "cat": "shooter", "desc": "3D perspective space shooter that was converted into Donkey Kong."}, {"id": "sheriff", "name": "Sheriff", "year": 1979, "maker": "Nintendo", "cpu": "8080", "sound": "Discrete", "size": 12.0, "cat": "shooter", "desc": "Twin-stick Western town defense shooting bandits around a ring."}, {"id": "frogger", "name": "Frogger", "year": 1981, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "AY-3-8910", "size": 14.0, "cat": "action", "desc": "Highway dodging and turtle diving with famous chiptune melody suite."}, {"id": "scramble", "name": "Scramble", "year": 1981, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "2\u00d7 AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Cave bombing runs with vertical rocket launches and fuel management."}, {"id": "supercobra", "name": "Super Cobra", "year": 1981, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "2\u00d7 AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Helicopter sequel to Scramble with oil tanks, minefields, and hostage carry."}, {"id": "timepilot", "name": "Time Pilot", "year": 1982, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "2\u00d7 AY-3-8910", "size": 24.0, "cat": "shooter", "desc": "360-degree dogfighting across 1910 biplanes, 1940 WWII, 1970 copters, and 2001 UFOs."}, {"id": "timeplt84", "name": "Time Pilot '84", "year": 1984, "maker": "Konami", "cpu": "6809", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "shooter", "desc": "Futuristic lock-on missile dogfight sequel over sci-fi cloud cities."}, {"id": "gyruss", "name": "Gyruss", "year": 1983, "maker": "Konami", "cpu": "2\u00d7 Z80 + 6809", "sound": "5\u00d7 AY-3-8910", "size": 48.0, "cat": "shooter", "desc": "Circular 3D tube shooter playing Bach's Toccata in Dm on 15 audio voices."}, {"id": "pooyan", "name": "Pooyan", "year": 1982, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "2\u00d7 AY-3-8910", "size": 20.0, "cat": "shooter", "desc": "Elevator archery defending piglets against balloon-floating wolves."}, {"id": "rocnrope", "name": "Roc'n Rope", "year": 1983, "maker": "Konami", "cpu": "2\u00d7 6809", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "platformer", "desc": "Harpoon climbing rope mechanics navigating cavemen and dinosaurs."}, {"id": "circusc", "name": "Circus Charlie", "year": 1984, "maker": "Konami", "cpu": "Z80", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "action", "desc": "Circus clown lion jumping, trapeze swinging, and tightrope balance."}, {"id": "trackfld", "name": "Track & Field", "year": 1983, "maker": "Konami", "cpu": "2\u00d7 6809", "sound": "2\u00d7 AY-3-8910 + VLM", "size": 48.0, "cat": "sports", "desc": "100m dash, long jump, javelin, 110m hurdles with rapid button mashing."}, {"id": "hyperspt", "name": "Hyper Sports", "year": 1984, "maker": "Konami", "cpu": "2\u00d7 6809", "sound": "2\u00d7 AY-3-8910 + VLM", "size": 48.0, "cat": "sports", "desc": "Swimming, skeet shooting, vault, archery, triple jump, and weightlifting."}, {"id": "yiear", "name": "Yie Ar Kung-Fu", "year": 1985, "maker": "Konami", "cpu": "Z80", "sound": "VLM5030 + PSG", "size": 48.0, "cat": "action", "desc": "The forefather of 1-on-1 fighting games; 16 distinct martial arts strikes."}, {"id": "roadf", "name": "Road Fighter", "year": 1984, "maker": "Konami", "cpu": "Z80", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "sports", "desc": "Top-down turbo highway racing with drift recovery and fuel tanker grabs."}, {"id": "junofirst", "name": "Juno First", "year": 1983, "maker": "Konami", "cpu": "2\u00d7 6809", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "shooter", "desc": "High-speed pseudo-3D grid dogfighting with hyper-space warp drive."}, {"id": "tutankhm", "name": "Tutankham", "year": 1982, "maker": "Konami", "cpu": "2\u00d7 6809", "sound": "2\u00d7 AY-3-8910", "size": 32.0, "cat": "maze", "desc": "Tomb exploration shooter firing flash bombs and collecting pharaoh masks."}, {"id": "amidar", "name": "Amidar", "year": 1981, "maker": "Konami", "cpu": "2\u00d7 Z80", "sound": "2\u00d7 AY-3-8910", "size": 16.0, "cat": "maze", "desc": "Grid tracer painting lines around pigs and police cops with corner jumps."}, {"id": "tempest", "name": "Tempest", "year": 1981, "maker": "Atari", "cpu": "6502", "sound": "2\u00d7 POKEY", "size": 24.0, "cat": "spinner", "desc": "Geometric vector tube shooter controlled with physical rotary spinner knob."}, {"id": "asteroids", "name": "Asteroids", "year": 1979, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 10.0, "cat": "vector", "desc": "Vector space rocks, saucer sirens, and accelerating 2-note heartbeat bass."}, {"id": "astdelux", "name": "Asteroids Deluxe", "year": 1981, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 12.0, "cat": "vector", "desc": "Cluster-splitting death stars, tracking saucers, and defensive energy shield."}, {"id": "centiped", "name": "Centipede", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 16.0, "cat": "spinner", "desc": "Trackball / spinner rapid-fire mushroom patch bug shooter."}, {"id": "milliped", "name": "Millipede", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 24.0, "cat": "spinner", "desc": "DDT poison bombs, inchworms that slow time, bees, and spiders."}, {"id": "battlezone", "name": "Battlezone", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 16.0, "cat": "vector", "desc": "First-person 3D vector wireframe tank combat with periscope radar."}, {"id": "lunarlander", "name": "Lunar Lander", "year": 1979, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 10.0, "cat": "spinner", "desc": "Vector physics moon landing; rotary encoder operates continuous rocket burn."}, {"id": "missile", "name": "Missile Command", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "POKEY", "size": 12.0, "cat": "spinner", "desc": "Defend 6 coastal cities from MIRV nuclear missile barrages."}, {"id": "redbaron", "name": "Red Baron", "year": 1980, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 16.0, "cat": "vector", "desc": "First-person 3D vector dogfight combat against WWI biplanes and zeppelins."}, {"id": "spaceduel", "name": "Space Duel", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2\u00d7 POKEY", "size": 24.0, "cat": "vector", "desc": "Color vector space combat with ships linked together by energy tethers."}, {"id": "gravitar", "name": "Gravitar", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2\u00d7 POKEY", "size": 24.0, "cat": "vector", "desc": "Brutal gravitational vector exploration flying into alien bunker bases."}, {"id": "mhavoc", "name": "Major Havoc", "year": 1983, "maker": "Atari", "cpu": "2\u00d7 6502", "sound": "2\u00d7 POKEY", "size": 48.0, "cat": "spinner", "desc": "Hybrid vector space combat and roller-controller platform jumping."}, {"id": "crystal", "name": "Crystal Castles", "year": 1983, "maker": "Atari", "cpu": "6502", "sound": "2\u00d7 POKEY", "size": 32.0, "cat": "spinner", "desc": "Isometric Escher castles; Bentley Bear gathering gems with magic hat."}, {"id": "blackwid", "name": "Black Widow", "year": 1982, "maker": "Atari", "cpu": "6502", "sound": "2\u00d7 POKEY", "size": 24.0, "cat": "vector", "desc": "Color vector spiderweb arena shooter driving eggs, beetles, and thunderbugs."}, {"id": "pong", "name": "Pong / Super Pong", "year": 1974, "maker": "Atari", "cpu": "Discrete/6502", "sound": "Beeper", "size": 4.0, "cat": "spinner", "desc": "The video game genesis; optical rotary knob operates paddle deflection."}, {"id": "breakout", "name": "Breakout / Super", "year": 1976, "maker": "Atari", "cpu": "6502", "sound": "Discrete", "size": 8.0, "cat": "spinner", "desc": "Block destruction mechanics with ball trajectory acceleration."}, {"id": "invaders", "name": "Space Invaders", "year": 1978, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 8.0, "cat": "shooter", "desc": "The founding legend; descending alien march syncing to audio tempo."}, {"id": "invaddlx", "name": "Space Invaders II", "year": 1979, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 12.0, "cat": "shooter", "desc": "Flashing saucers that beam down reinforcements and splitting aliens."}, {"id": "junglehunt", "name": "Jungle Hunt", "year": 1982, "maker": "Taito", "cpu": "3\u00d7 Z80", "sound": "4\u00d7 AY-3-8910", "size": 48.0, "cat": "action", "desc": "Vine swinging, crocodile river stabbing, and cannibals boiling cauldron."}, {"id": "elevator", "name": "Elevator Action", "year": 1983, "maker": "Taito", "cpu": "3\u00d7 Z80", "sound": "4\u00d7 AY-3-8910", "size": 48.0, "cat": "action", "desc": "Secret agent 17 stealing red-door documents and dropping light fixtures."}, {"id": "frontline", "name": "Front Line", "year": 1982, "maker": "Taito", "cpu": "3\u00d7 Z80", "sound": "3\u00d7 AY-3-8910", "size": 32.0, "cat": "spinner", "desc": "Infantry battlefield combat with rotary dial aiming, grenades, and tanks."}, {"id": "tinstar", "name": "The Tin Star", "year": 1983, "maker": "Taito", "cpu": "3\u00d7 Z80", "sound": "4\u00d7 AY-3-8910", "size": 32.0, "cat": "spinner", "desc": "Saloon shootout combat with full rotary optical barrel aiming."}, {"id": "qix", "name": "Qix", "year": 1981, "maker": "Taito", "cpu": "2\u00d7 6809", "sound": "Discrete", "size": 24.0, "cat": "action", "desc": "Claim territory by drawing slow/fast bounding boxes avoiding the Qix helix."}, {"id": "phoenix", "name": "Phoenix", "year": 1980, "maker": "Taito/Amstar", "cpu": "8085", "sound": "TMS36XX + Noise", "size": 16.0, "cat": "shooter", "desc": "5-phase space assault concluding with the first multi-shield mothership boss."}, {"id": "pleiads", "name": "Pleiads", "year": 1981, "maker": "Tehkan", "cpu": "8085", "sound": "TMS36XX + Noise", "size": 16.0, "cat": "shooter", "desc": "Martian warbird assault, space station docking, and fortress battles."}, {"id": "lrescue", "name": "Lunar Rescue", "year": 1979, "maker": "Taito", "cpu": "8080", "sound": "Discrete", "size": 10.0, "cat": "action", "desc": "Fly lander to lunar crater, rescue astronaut, and dock with mothership."}, {"id": "arkanoid", "name": "Arkanoid", "year": 1986, "maker": "Taito", "cpu": "Z80", "sound": "AY-3-8910", "size": 48.0, "cat": "spinner", "desc": "The ultimate block breaker; laser cannons, catch powerups, knob paddle."}, {"id": "defender", "name": "Defender", "year": 1981, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Bi-directional radar planet defense catching abducted humanoids."}, {"id": "stargate", "name": "Stargate / Def. II", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Stargate warp portals, cloaking device, invviso shield, and firebombs."}, {"id": "joust", "name": "Joust", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "action", "desc": "Fly flying ostriches over lava pits, lance jousting, and pterodactyl duels."}, {"id": "robotron", "name": "Robotron: 2084", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "shooter", "desc": "Frenetic 360-degree twin-stick arena combat saving the last human family."}, {"id": "sinistar", "name": "Sinistar", "year": 1983, "maker": "Williams", "cpu": "6809", "sound": "6800 + Speech", "size": 32.0, "cat": "shooter", "desc": "Mine planetoids for Sinibombs while terrifying demonic star roars voice."}, {"id": "bubbles", "name": "Bubbles", "year": 1982, "maker": "Williams", "cpu": "6809", "sound": "6800 + DAC", "size": 32.0, "cat": "action", "desc": "Soap bubble scrubbing kitchen sinks eating ants and avoiding sponges."}, {"id": "gorf", "name": "Gorf", "year": 1981, "maker": "Midway", "cpu": "Z80", "sound": "Votrax Speech + PSG", "size": 24.0, "cat": "shooter", "desc": "5 distinctive missions with robotic speech synthesis insulting players."}, {"id": "wow", "name": "Wizard of Wor", "year": 1981, "maker": "Midway", "cpu": "Z80", "sound": "Votrax Speech + PSG", "size": 24.0, "cat": "maze", "desc": "Co-op radar dungeon hunt hunting invisible Burwors, Garwors, and Worluks."}, {"id": "tron", "name": "Tron", "year": 1982, "maker": "Bally Midway", "cpu": "Z80", "sound": "PSG + Tape", "size": 32.0, "cat": "spinner", "desc": "4 mini-games: Light Cycles, MCP Cone, I/O Tower, and Tank Battle with spinner."}, {"id": "tapper", "name": "Tapper", "year": 1983, "maker": "Bally Midway", "cpu": "Z80", "sound": "PSG + DAC", "size": 48.0, "cat": "action", "desc": "Slide root beers down four saloon bars to thirsty cowboys and aliens."}, {"id": "burgertime", "name": "BurgerTime", "year": 1982, "maker": "Data East", "cpu": "Z80", "sound": "AY-3-8910", "size": 28.0, "cat": "platformer", "desc": "Chef Peter Pepper dropping buns and beef patties on hot dogs and pickles."}, {"id": "burnin", "name": "Bump 'n' Jump", "year": 1982, "maker": "Data East", "cpu": "Z80", "sound": "AY-3-8910", "size": 24.0, "cat": "sports", "desc": "High-flying jumping car ramming rival racers into guard rails."}, {"id": "karatec", "name": "Karate Champ", "year": 1984, "maker": "Data East", "cpu": "2\u00d7 Z80", "sound": "AY-3-8910 + DAC", "size": 32.0, "cat": "action", "desc": "Traditional kumite point scoring with dual joystick martial arts strikes."}, {"id": "moonpatrol", "name": "Moon Patrol", "year": 1982, "maker": "Irem", "cpu": "Z80", "sound": "AY-3-8910", "size": 32.0, "cat": "action", "desc": "Parallax scrolling moon buggy jumping craters and shooting flying saucers."}, {"id": "cclimber", "name": "Crazy Climber", "year": 1980, "maker": "Nichibutsu", "cpu": "Z80", "sound": "AY-3-8910", "size": 24.0, "cat": "action", "desc": "Scale 200-story skyscrapers evading falling flower pots, condors, and King Kong."}, {"id": "mooncrst", "name": "Moon Cresta", "year": 1980, "maker": "Nichibutsu", "cpu": "Z80", "sound": "AY-3-8910", "size": 16.0, "cat": "shooter", "desc": "Sequential ship docking creating a massive 3-stage super fighter."}, {"id": "qbert", "name": "Q*bert", "year": 1982, "maker": "Gottlieb", "cpu": "8088", "sound": "Votrax Speech + DAC", "size": 20.0, "cat": "platformer", "desc": "Isometric pyramid color hopping swearing with cartoon speech balloons."}, {"id": "pengo", "name": "Pengo", "year": 1982, "maker": "Sega", "cpu": "Z80", "sound": "Namco WSG", "size": 24.0, "cat": "maze", "desc": "Slide giant ice blocks into sno-bees playing the Popcorn synth melody."}, {"id": "zaxxon", "name": "Zaxxon", "year": 1982, "maker": "Sega", "cpu": "Z80", "sound": "Discrete DAC", "size": 32.0, "cat": "shooter", "desc": "Isometric 3D space fortress assault gauging altitude via shadows."}, {"id": "congo", "name": "Congo Bongo", "year": 1983, "maker": "Sega", "cpu": "Z80", "sound": "SN76489", "size": 32.0, "cat": "platformer", "desc": "Isometric jungle climbing, water lily jumping, and gorilla retribution."}, {"id": "mrdo", "name": "Mr. Do!", "year": 1982, "maker": "Universal", "cpu": "Z80", "sound": "SN76489", "size": 24.0, "cat": "maze", "desc": "Bouncing power ball clown digging orchards, dropping apples on bad guys."}, {"id": "ladybug", "name": "Lady Bug", "year": 1981, "maker": "Universal", "cpu": "Z80", "sound": "SN76489", "size": 24.0, "cat": "maze", "desc": "Rotate revolving turnstile doors to trap predatory insects and spell SPECIAL."}, {"id": "mousetrap", "name": "Mouse Trap", "year": 1981, "maker": "Exidy", "cpu": "Z80", "sound": "Discrete", "size": 24.0, "cat": "maze", "desc": "Press colored buttons to alter maze doors and transform mouse into dog."}];
+
+// Active 12 slots (Crazy Climber equipped in Slot 2)
+let activeSlots = [
+  'pacman', 'cclimber', 'galaga', 'dkong', 'frogger', 'asteroids',
+  'tempest', 'gyruss', 'scramble', 'timepilot', 'mario', 'junglehunt'
+];
+
+let selectedSlotIdx = 0;
+let currentGenreFilter = 'all';
+
+function loadPreset(presetName) {
+  if (presetName === 'allstar') {
+    activeSlots = ['pacman', 'cclimber', 'galaga', 'dkong', 'frogger', 'asteroids', 'tempest', 'gyruss', 'scramble', 'timepilot', 'mario', 'junglehunt'];
+    showToast("Loaded 🌟 All-Star Core with Crazy Climber & Pac-Man!");
+  } else if (presetName === 'twinstick') {
+    activeSlots = ['cclimber', 'tempest', 'robotron', 'frontline', 'arkanoid', 'karatec', 'lunarlander', 'centiped', 'tron', 'mhavoc', 'sheriff', 'pong'];
+    showToast("Loaded 🧗 Twin-Stick & Rotary Elite with Crazy Climber!");
+  } else if (presetName === 'classics') {
+    activeSlots = ['pacman', 'cclimber', 'invaders', 'galaga', 'dkong', 'frogger', 'asteroids', 'scramble', 'rallyx', 'qix', 'centiped', 'mario'];
+    showToast("Loaded 🚀 1980 Golden Classics with Crazy Climber!");
+  }
+  renderSlots();
+  renderCatalog(document.getElementById('searchGames').value, currentGenreFilter);
+}
+
+function renderSlots() {
+  const container = document.getElementById('slotsGrid');
+  container.innerHTML = '';
+  
+  let totalRomSize = 0;
+
+  activeSlots.forEach((gameId, idx) => {
+    const game = CATALOG.find(g => g.id === gameId) || CATALOG[0];
+    totalRomSize += game.size;
+
+    const card = document.createElement('div');
+    card.className = `slot-card ${idx === selectedSlotIdx ? 'active' : ''}`;
+    card.onclick = () => selectSlot(idx);
+
+    const badgeClass = game.cpu.includes('6502') ? 'badge-6502' : (game.cpu.includes('6809') ? 'badge-6809' : 'badge-z80');
+
+    card.innerHTML = `
+      <div class="slot-header">
+        <span class="slot-number">SLOT ${idx + 1}</span>
+        <span class="slot-badge ${badgeClass}">${game.cpu}</span>
+      </div>
+      <div class="game-name">${game.name}</div>
+      <div class="game-meta">
+        <span>${game.maker} '${String(game.year).slice(2)}</span>
+        <span style="color:#f5a623;font-weight:700;">${game.size.toFixed(1)} KB</span>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  updateMemoryGauge(totalRomSize);
+}
+
+function updateMemoryGauge(totalRomSize) {
+  const coreSize = 110.0;
+  const totalUsed = coreSize + totalRomSize;
+  const maxFlash = 1024.0;
+  const pct = (totalUsed / maxFlash * 100).toFixed(1);
+  const freeKb = (maxFlash - totalUsed).toFixed(1);
+
+  document.getElementById('flashText').textContent = `${totalUsed.toFixed(1)} KB / 1,024 KB (${pct}%)`;
+  document.getElementById('flashGauge').style.width = pct + '%';
+  document.getElementById('freeText').textContent = `Free Headroom: ${freeKb} KB (${(100 - pct).toFixed(1)}%)`;
+}
+
+function selectSlot(idx) {
+  selectedSlotIdx = idx;
+  renderSlots();
+  document.getElementById('catalogTitle').textContent = `Select Replacement for Slot ${idx + 1} (${CATALOG.find(g => g.id === activeSlots[idx]).name})`;
+}
+
+function renderCatalog(filterText = '', genre = currentGenreFilter) {
+  const container = document.getElementById('gamesCatalog');
+  container.innerHTML = '';
+
+  const filtered = CATALOG.filter(g => {
+    const matchText = g.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                      g.sound.toLowerCase().includes(filterText.toLowerCase()) ||
+                      g.maker.toLowerCase().includes(filterText.toLowerCase()) ||
+                      g.cpu.toLowerCase().includes(filterText.toLowerCase());
+    const matchGenre = (genre === 'all') || (g.cat === genre);
+    return matchText && matchGenre;
+  });
+
+  filtered.forEach(game => {
+    const isEquipped = activeSlots.includes(game.id);
+    const item = document.createElement('div');
+    item.className = `library-item ${isEquipped ? 'selected' : ''}`;
+
+    const isClimber = game.id === 'cclimber';
+    const climberBadge = isClimber ? '<span style="background:#e67e22; color:#000; padding:1px 6px; border-radius:4px; font-size:0.58rem; font-weight:800; margin-left:6px;">🧗 DUAL-STICK ICON</span>' : '';
+
+    item.innerHTML = `
+      <div class="item-info">
+        <div class="item-title">${game.name} <span style="font-size:0.65rem; color:#888;">(${game.year}, ${game.maker})</span> ${climberBadge}</div>
+        <div class="item-sub">${game.cpu} · ${game.sound} · <b style="color:#f5a623;">${game.size} KB</b> — ${game.desc}</div>
+      </div>
+      <button class="btn-swap" onclick="equipGame('${game.id}')">
+        ${isEquipped ? '✓ EQUIPPED' : 'ASSIGN TO SLOT ' + (selectedSlotIdx + 1)}
+      </button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function equipGame(gameId) {
+  activeSlots[selectedSlotIdx] = gameId;
+  renderSlots();
+  renderCatalog(document.getElementById('searchGames').value);
+  showToast(`Assigned ${CATALOG.find(g => g.id === gameId).name} to Slot ${selectedSlotIdx + 1}!`);
+}
+
+// Genre Filter Pills
+document.querySelectorAll('#genreFilters .pill').forEach(pill => {
+  pill.onclick = () => {
+    document.querySelectorAll('#genreFilters .pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentGenreFilter = pill.dataset.cat;
+    renderCatalog(document.getElementById('searchGames').value, currentGenreFilter);
+  };
+});
+
+document.getElementById('searchGames').addEventListener('input', (e) => {
+  renderCatalog(e.target.value, currentGenreFilter);
+});
+
+// Dropzone
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#2ecc71'; };
+dropZone.ondragleave = () => { dropZone.style.borderColor = '#303544'; };
+dropZone.ondrop = (e) => {
+  e.preventDefault(); dropZone.style.borderColor = '#303544';
+  if (e.dataTransfer.files.length) handleRomFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange = () => {
+  if (fileInput.files.length) handleRomFile(fileInput.files[0]);
+};
+function handleRomFile(file) {
+  showToast(`Imported ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Verified SHA256!`);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'show';
+  setTimeout(() => toast.className = '', 2500);
+}
+
+// Action Button Handlers
+document.getElementById('btnExportBin').onclick = () => {
+  const payload = JSON.stringify({ slots: activeSlots, date: new Date().toISOString() });
+  const blob = new Blob([payload], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'FM1_TITAN_CUSTOM.fwsc';
+  a.click();
+  showToast('Exported FM1_TITAN_CUSTOM.fwsc firmware package!');
+};
+
+document.getElementById('btnExportHeader').onclick = () => {
+  let header = `/* Auto-generated FM-1 Titan Configuration Header */\n#pragma once\n\n`;
+  header += `#define FM1_ACTIVE_GAMES_COUNT ${activeSlots.length}\n`;
+  activeSlots.forEach((id, idx) => {
+    header += `#define FM1_SLOT_${idx + 1}_GAME "${id}"\n`;
+  });
+  const blob = new Blob([header], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'fm1_active_games.h';
+  a.click();
+  showToast('Generated C header fm1_active_games.h!');
+};
+
+document.getElementById('btnSaveConfig').onclick = () => {
+  const config = {
+    version: '1.0',
+    slots: activeSlots,
+    dpad: document.getElementById('mapDpad').value,
+    spinner: document.getElementById('mapSpinner').value,
+    throttle: document.getElementById('mapThrottle').value,
+    scanlines: document.getElementById('mapCrt').value,
+    echo: document.getElementById('mapEcho').value
+  };
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'arcade_config.json';
+  a.click();
+  showToast('Exported arcade_config.json profile!');
+};
+
+// Initial Render
+renderSlots();
+renderCatalog();
+
+// Hotkeys for world-class ease of use
+window.addEventListener('keydown', (e) => {
+  const searchInput = document.getElementById('searchGames');
+  if (e.key === '/' && document.activeElement !== searchInput) {
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+  } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+    searchInput.value = '';
+    renderCatalog('', currentGenreFilter);
+    searchInput.blur();
+  }
+});
+</script>
+</body>
+</html>

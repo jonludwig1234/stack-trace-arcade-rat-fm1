@@ -1,0 +1,127 @@
+{
+  "cuePoints": [
+    {
+      "sceneId": "scene_01_intro",
+      "name": "Firmware Boot Sequence",
+      "desc": "Z80 CPU Cold Boot & Pac-Man Chime",
+      "time": 0
+    },
+    {
+      "sceneId": "scene_02_pacman",
+      "name": "Pac-Man (1980 · Namco)",
+      "desc": "Z80 CPU · Namco WSG Siren, Waka-Waka & Ghost Fanfare",
+      "time": 5.479909297052155
+    },
+    {
+      "sceneId": "scene_03_galaga",
+      "name": "Galaga (1981 · Namco)",
+      "desc": "Starfield Scrolling · Dual Lasers · Alien Dive & Explosion",
+      "time": 10.681179138321996
+    },
+    {
+      "sceneId": "scene_04_dkong",
+      "name": "Donkey Kong (1981 · Nintendo)",
+      "desc": "25M Girder Physics · 8035 BGM · Hammer & Death Fanfare",
+      "time": 16.579047619047618
+    },
+    {
+      "sceneId": "scene_05_frogger",
+      "name": "Frogger (1981 · Konami)",
+      "desc": "Dual AY-3-8910 Chiptune BGM · Hop Chirps · Water Splash",
+      "time": 22.47691609977324
+    },
+    {
+      "sceneId": "scene_06_asteroids",
+      "name": "Asteroids (1979 · Atari)",
+      "desc": "Vector Inertial Drift · Dual-Pitch Heartbeat Thrust · Vector Cannon",
+      "time": 27.956825396825398
+    },
+    {
+      "sceneId": "scene_07_tempest",
+      "name": "Tempest (1981 · Atari)",
+      "desc": "3D Perspective Vector Warp · Superzapper · Atari POKEY Cascade",
+      "time": 33.158095238095235
+    },
+    {
+      "sceneId": "scene_08_cclimber",
+      "name": "Crazy Climber (1980 · Nichibutsu)",
+      "desc": "Twin-Stick Vertical Climber · Falling Flower Pots · Whistle & Splat",
+      "time": 38.77732426303855
+    },
+    {
+      "sceneId": "scene_09_gyruss",
+      "name": "Gyruss (1983 · Konami)",
+      "desc": "360° Polar Tube Flight · J.S. Bach Toccata & Fugue · 5x PSG Explosion",
+      "time": 44.07147392290249
+    },
+    {
+      "sceneId": "scene_10_bank1",
+      "name": "SFX Bank 1: Golden Age Arcade (1978–1982)",
+      "desc": "27 Sounds · Space Invaders March, Galaxian Dive & Pac-Man Intermission",
+      "time": 49.412063492063496
+    },
+    {
+      "sceneId": "scene_11_bank2",
+      "name": "SFX Bank 2: Nintendo 8-Bit Arcade (1981–1985)",
+      "desc": "27 Sounds · NES 2A03 APU Square/Noise Synthesis · Mario & Punch-Out",
+      "time": 55.077732426303854
+    },
+    {
+      "sceneId": "scene_12_bank3",
+      "name": "SFX Bank 3: Atari Vector & Sci-Fi (1979–1984)",
+      "desc": "27 Sounds · Atari POKEY 4-Channel Polyphonic Audio & Laser Bursts",
+      "time": 60.55764172335601
+    },
+    {
+      "sceneId": "scene_13_bank4",
+      "name": "SFX Bank 4: Konami, Sega & 80s Action (1981–1987)",
+      "desc": "27 Sounds · Dual AY-3-8910 & Yamaha YM2151 FM Engine",
+      "time": 65.15519274376418
+    },
+    {
+      "sceneId": "scene_14_speech_berzerk",
+      "name": "Vintage Speech: Berzerk (1980 · Stern)",
+      "desc": "TSI S14001A Speech Chip: \"Intruder Alert!\" & \"Coin Detected!\"",
+      "time": 69.93850340136055
+    },
+    {
+      "sceneId": "scene_15_speech_sinistar",
+      "name": "Vintage Speech: Q*bert & Sinistar (1982)",
+      "desc": "Votrax SC-01 & Harris HC-55516 CVSD: \"@!#?@!\" & \"Beware, I Live!\"",
+      "time": 75.04689342403628
+    },
+    {
+      "sceneId": "scene_16_speech_classics",
+      "name": "Vintage Speech: Wizard of Wor, Gorf and Dragons Lair",
+      "desc": "Votrax SC-01 and Dirk the Daring Authentic PCM Speech ROMs",
+      "time": 81.64136054421769
+    },
+    {
+      "sceneId": "scene_17_drum_tracker",
+      "name": "FM-1 Drum Synth & 16-Step Step Sequencer",
+      "desc": "TR-808 Modeled Analog Kick, Snare, Hi-Hats & Claps · 8 Patterns",
+      "time": 88.51446712018141
+    },
+    {
+      "sceneId": "scene_18_leaderboard",
+      "name": "NVRAM Leaderboards & Pro Firmware Features",
+      "desc": "Persistent High Scores · Universal Immortal God Mode · Stage Skip",
+      "time": 92.6940589569161
+    },
+    {
+      "sceneId": "scene_19_jukebox",
+      "name": "Live Jukebox & Circuit-Bending Rewind Engine",
+      "desc": "Chiptune Album Playback · RAM Glitch Circuit-Bending · Time Machine",
+      "time": 96.92009070294785
+    },
+    {
+      "sceneId": "scene_20_outro",
+      "name": "Production Certified: 100% Green",
+      "desc": "Hermes Agent: 24 / 24 Master QA Batteries Passed · M-VAVE FM-1",
+      "time": 102.4
+    }
+  ],
+  "sampleRate": 44100,
+  "totalSamples": 4714496,
+  "durationSeconds": 106.90467120181405
+}
