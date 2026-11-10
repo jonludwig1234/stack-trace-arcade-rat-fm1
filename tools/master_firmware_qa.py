@@ -33,7 +33,7 @@ def main():
 
     steps = [
         ("Native C Firmware GCC Compilation & Unit Execution Rig", 
-         "gcc -O2 tools/test_native_c_firmware.c src/fm1_pac_bridge.c src/pac_core.c src/pac_synth.c src/pac_video.c src/pac_wsg.c src/pac_demo_songs.c src/z80.c -I src/ -lm -o tools/test_native_c_firmware && tools/test_native_c_firmware"),
+         "gcc -O2 tools/test_native_c_firmware.c src/fm1_flash_hw.c src/fm1_pac_bridge.c src/pac_core.c src/pac_synth.c src/pac_video.c src/pac_wsg.c src/pac_demo_songs.c src/z80.c -I src/ -lm -o tools/test_native_c_firmware && tools/test_native_c_firmware"),
         ("Master Arcade Specification & ROM Execution Suite", 
          "node tools/test_all_games_arcade_spec.js"),
         ("Multi-Frame Quality Control & Ground Invariant Playthrough", 
@@ -79,7 +79,9 @@ def main():
         ("Vintage Arcade Speech ROM Synthesis & LPC-10/Votrax/CVSD Fidelity Rig",
          "node tools/test_speech_rom_fidelity.js"),
         ("Real-User Journeys, Negative Cross-Trigger Isolation & DSP Wiring Rig",
-         "node tools/test_real_user_journeys_and_acoustics.js")
+         "node tools/test_real_user_journeys_and_acoustics.js"),
+        ("Dual-Hardware Flash Compatibility & Cross-Revision NVRAM Engine",
+         "node tools/test_dual_hardware_flash_compat.js")
     ]
 
     total = len(steps)

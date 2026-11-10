@@ -2,6 +2,7 @@
  * Test runner for native M-VAVE FM-1 C firmware core & bridge.
  */
 #include "pac_core.h"
+#include "fm1_flash_hw.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,6 +132,73 @@ int main(void) {
     mock_controls_state.buttons = (1U << 0) | (1U << 1);
     fm1_pacman_update_controls();
     printf("   ✓ FM-1 Hardware Bridge correctly mapped silicone keys & function buttons.\n");
+
+    /* 8. Test Dual-Hardware Flash Identification & Driver Compatibility */
+    printf("8. Testing Dual-Hardware Flash Identification (Old Rev 1 & New Rev 2)...\n");
+
+    /* 8a. Test Old FM-1 Hardware (Puya P25Q80H, JEDEC ID 0x856014) */
+    int ret_puya = fm1_flash_hw_init(FM1_JEDEC_PUYA_P25Q80H);
+    assert(ret_puya == 0);
+    const fm1_flash_hw_info_t *info_puya = fm1_flash_hw_get_info();
+    assert(info_puya->rev == FM1_HW_REV1_PUYA);
+    assert(info_puya->jedec_id == 0x856014U);
+    assert(info_puya->status_register_unprotected == true);
+    printf("   ✓ Old FM-1 verified: %s (JEDEC 0x%06X) - %s\n", info_puya->chip_name, info_puya->jedec_id, info_puya->batch_desc);
+
+    /* 8b. Test New FM-1 Hardware (UCUN UC25HQ80, JEDEC ID 0xB36014) */
+    int ret_ucun = fm1_flash_hw_init(FM1_JEDEC_UCUN_UC25HQ80);
+    assert(ret_ucun == 0);
+    const fm1_flash_hw_info_t *info_ucun = fm1_flash_hw_get_info();
+    assert(info_ucun->rev == FM1_HW_REV2_UCUN);
+    assert(info_ucun->jedec_id == 0xB36014U);
+    assert(info_ucun->status_register_unprotected == true);
+    printf("   ✓ New FM-1 verified: %s (JEDEC 0x%06X) - %s\n", info_ucun->chip_name, info_ucun->jedec_id, info_ucun->batch_desc);
+
+    /* 8c. Test Generic JEDEC SPI NOR Compatibility (0xEF4014 / 0xC84014) */
+    assert(fm1_flash_hw_is_supported_id(FM1_JEDEC_WINBOND_W25Q80) == true);
+    assert(fm1_flash_hw_is_supported_id(FM1_JEDEC_GD_GD25Q80) == true);
+    assert(fm1_flash_hw_is_supported_id(0x123456) == false); /* Unknown invalid chip rejected */
+    printf("   ✓ Generic JEDEC 8Mbit SPI NOR fallback verified; invalid IDs rejected safely.\n");
+
+    /* 9. Test NVRAM Persistence & CRC32 Integrity on Both Hardware Revisions */
+    printf("9. Testing NVRAM High Score Persistence & CRC32 Verification...\n");
+
+    /* Write test leaderboard payload on New Hardware (UCUN 0xB36014) */
+    const char *test_leaderboard_payload = "PAC:BIL:3333360;DKG:ACE:1200000;GAL:KID:999990;";
+    size_t payload_len = strlen(test_leaderboard_payload) + 1;
+    int save_res = fm1_nvram_save(test_leaderboard_payload, payload_len);
+    assert(save_res == 0);
+
+    /* Read back and verify CRC */
+    char readback_buf[256];
+    size_t readback_size = 0;
+    int load_res = fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size);
+    assert(load_res == 0);
+    assert(readback_size == payload_len);
+    assert(strcmp(readback_buf, test_leaderboard_payload) == 0);
+    printf("   ✓ NVRAM save/load on New Hardware (0xB36014) matched 100%% byte-for-byte with valid CRC32.\n");
+
+    /* Switch to Old Hardware (Puya 0x856014) and verify persistence across revision migration */
+    ret_puya = fm1_flash_hw_init(FM1_JEDEC_PUYA_P25Q80H);
+    assert(ret_puya == 0);
+    const char *test_puya_payload = "FROG:HOP:884200;GYR:VEC:775000;AST:ROC:654300;";
+    payload_len = strlen(test_puya_payload) + 1;
+    save_res = fm1_nvram_save(test_puya_payload, payload_len);
+    assert(save_res == 0);
+
+    memset(readback_buf, 0, sizeof(readback_buf));
+    load_res = fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size);
+    assert(load_res == 0);
+    assert(readback_size == payload_len);
+    assert(strcmp(readback_buf, test_puya_payload) == 0);
+    printf("   ✓ NVRAM save/load on Old Hardware (0x856014) verified with zero data corruption.\n");
+
+    /* Test Erase */
+    int erase_res = fm1_nvram_erase();
+    assert(erase_res == 0);
+    load_res = fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size);
+    assert(load_res != 0); /* Empty / erased flash correctly reports uninitialized */
+    printf("   ✓ Sector erase and clean uninitialized state verified.\n");
 
     printf("\n=========================================================================\n");
     printf(">>> ALL NATIVE C FIRMWARE UNIT TESTS PASSED 100%%! <<<\n");

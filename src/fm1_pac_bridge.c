@@ -3,6 +3,7 @@
  * Connects the Pac-Man core to FM-1's ST7789 LCD, Audio DMA, and 27 silicone keys.
  */
 #include "pac_core.h"
+#include "fm1_flash_hw.h"
 #include <string.h>
 
 /* FM1 SDK / Board structures */
@@ -32,6 +33,8 @@ static uint32_t prev_buttons = 0;
 
 void fm1_pacman_init(void)
 {
+    /* Initialize dual-hardware flash detection (supports Old 0x856014 and New 0xB36014) */
+    fm1_flash_hw_init(0);
     pac_core_init(&g_pac);
 }
 

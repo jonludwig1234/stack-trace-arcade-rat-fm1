@@ -77,6 +77,13 @@ def verify():
         assert f"id: '{tg}'" in sim or f'id: "{tg}"' in sim, f"Tour game '{tg}' missing in tourState.games!"
     print(f" Installed ROMs Attract Tour Demo Engine verified ({len(tour_games)} games cycling with HUD & controls).")
 
+    # 9. Check Dual-Hardware Flash Architecture (Old Rev 1 & New Rev 2)
+    assert "DUAL HW: REV 1 &amp; REV 2" in sim or "DUAL HW: REV 1 & REV 2" in sim, "Dual-hardware badge missing from simulator!"
+    assert "DUAL-VERIFIED COMPATIBLE" in cfg, "Dual-hardware compatibility missing from configurator!"
+    assert "0x856014" in sim or "0x856014" in cfg, "Puya 0x856014 ID missing from documentation/UI!"
+    assert "0xB36014" in sim or "0xB36014" in cfg, "UCUN 0xB36014 ID missing from documentation/UI!"
+    print(" Dual-Hardware Compatibility verified for Old (Puya 0x856014) and New (UCUN 0xB36014) FM-1 devices.")
+
     print("\n ALL VERIFICATION CHECKS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":

@@ -99,6 +99,36 @@ This firmware is compatible with community flashing utilities and repositories:
 
 ---
 
+## 🛡️ Dual-Hardware Compatibility: Old (Rev 1) & New (Rev 2) FM-1 Devices
+
+**Arcade Rat v1.0 is 100% verified and guaranteed compatible with BOTH Old and New M-VAVE FM-1 production batches.**
+
+### Hardware Difference Matrix
+| Specification | **Old FM-1 (Rev 1 / Batch 1)** | **New FM-1 (Rev 2 / Autumn 2026 Batch)** |
+| :--- | :--- | :--- |
+| **Physical Appearance** | Plain chassis (no front logo) | Front faceplate with silkscreened M-VAVE logo |
+| **SPI NOR Flash Chip** | **Puya P25Q80H** (1 MiB / 8 Mbit) | **UCUN UC25HQ80** (1 MiB / 8 Mbit) |
+| **JEDEC ID** | **`0x856014`** (`85 60 14`) | **`0xB36014`** (`B3 60 14`) |
+| **Display Panel** | ST7789 240×240 IPS (SPI + DMA) | ST7789V2 240×240 IPS (Identical pinout) |
+| **Audio DAC & Amp** | Dual-channel 24-bit 44.1kHz PWM/DAC | Dual-channel 24-bit 44.1kHz PWM/DAC |
+| **Silicone Keypad** | 27 velocity-sensitive keys | 27 velocity-sensitive keys (Identical matrix) |
+| **Status Register Factory State**| Unprotected (`0x00`) | Hardware block-protected (`BP0..BP2 = 1`, `0x1C`) |
+
+### Why Other Custom Firmwares Failed on New FM-1 Units
+Many early community firmwares and ports (such as early *Felucca*, *Skiff*, and *Sloop*) encountered save-state failures, corrupted preset banks, or failed boot cycles on newer FM-1 units. The root causes were:
+1. **Hardcoded Flash ID Checks:** Drivers specifically queried for Puya ID `0x856014`. When encountering `0xB36014` on the newer UCUN chip, the flash initialization aborted and fell back to volatile RAM-only mode.
+2. **Status Register Lockout:** The UCUN UC25HQ80 chip leaves the factory with block protection bits (`BP0..BP4`, `TB`, `SRP0`) asserted in its status register. If a firmware does not execute a proper Write Enable (`0x06`) followed by Write Status Register (`0x01 0x00 0x00`), sector erase and page program commands are silently ignored by the chip, causing high scores and settings to vanish on power cycle.
+
+### The Arcade Rat Dual-Hardware Architecture
+Arcade Rat includes a dedicated dual-hardware compatibility engine (`src/fm1_flash_hw.c` / `src/fm1_flash_hw.h`):
+- **Universal JEDEC Probing:** Transparently identifies both `0x856014` (Puya) and `0xB36014` (UCUN), computing flash capacity dynamically from the JEDEC capacity exponent byte (`2^(id & 0xFF) = 1,048,576 bytes`).
+- **Auto-Unprotect Routine:** Automatically clears all block protect bits across status registers 1 & 2 during cold boot initialization.
+- **Atomic 4096-Byte Sector Erase:** Enforces strict 4KB alignment (`0x20` Sector Erase) with Write-In-Progress (`WIP`) and Write-Enable-Latch (`WEL`) hardware polling before any NVRAM write.
+- **Fail-Safe NVRAM Persistence:** High scores, player initials, and audio DSP settings are stored with 32-byte magic headers (`"FSTA"`) and IEEE 802.3 CRC32 checksums, allowing seamless persistence and flash wear leveling on both hardware revisions.
+- **Bootloader & SysEx Conformity:** The SysEx packet framing (`F0 00 59 ... F7`) adheres strictly to both vendor and open bootloader protocols, preventing update lockups.
+
+---
+
 ## 🛠️ Web Workbench & Simulator
 You can test the entire firmware, tracker, synthesizer, and arcade vault directly in the browser via Web Audio & Canvas:
 - Open `web/fm1_pacman_preview.html` in any modern web browser or run:

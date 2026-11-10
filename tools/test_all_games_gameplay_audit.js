@@ -624,3 +624,5 @@ console.log(`🎉 ALL ${totalPassed} / ${totalTests} GAMEPLAY AUDIT TESTS PASSED
 console.log('Zero multi-hit life drain, clean respawn invulnerability, auto-fire cadence,');
 console.log('and on-screen / keypad Game Over restarts verified across all 8 arcade titles.');
 console.log('==============================================================================');
+process.exit(0);
+
