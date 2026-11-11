@@ -1,0 +1,30 @@
+{
+  "name": "ARCADE RAT",
+  "title": "ARCADE RAT v1.0",
+  "what": "Bare-metal Z80 retro arcade emulator, 5-engine sound chip synthesizer (WSG, AY-3-8910, POKEY, 2A03, 6-Op FM), 16-step multi-chip tracker, 108-key SFX soundboard, and vintage speech ROMs for M-VAVE FM-1.",
+  "author": "Stack Trace",
+  "version": "1.0.0",
+  "kinds": [
+    "arcade",
+    "synth",
+    "tracker",
+    "emulator",
+    "chiptune",
+    "speech"
+  ],
+  "category": "Games & Synthesizers",
+  "play": "https://jonludwig1234.github.io/stack-trace-arcade-rat-fm1/web/fm1_pacman_preview.html",
+  "editor": "https://jonludwig1234.github.io/stack-trace-arcade-rat-fm1/web/configurator.html",
+  "repo": "https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1",
+  "release": "https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/tag/v1.0.0",
+  "video": "https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/fm1_firmware_showcase_demo.mp4",
+  "image": "web/screen_splash.png",
+  "color": "#aae4c8",
+  "hardware": {
+    "target": "M-VAVE FM-1",
+    "dual_hardware_verified": true,
+    "rev1_puya": "0x856014",
+    "rev2_ucun": "0xB36014",
+    "status_register_unprotect": true
+  }
+}
