@@ -2,10 +2,19 @@
 *.o
 *.a
 *.bin
-*.fwsc
+*.bak
 /tmp/
 __pycache__/
 *.pyc
+fm1_open/
+tools/test_native_c_firmware
+
+# Local scratch / reference media & ROMs
+roms/
+pac_ref/
+pacman.zip
+snap_*.png
+test_snap.png
 
 # Large raw video/renders (kept in brain / web releases)
 tools/node_modules/

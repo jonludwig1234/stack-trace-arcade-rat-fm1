@@ -6,6 +6,8 @@ soundchips, synthesis engines, hardware controls, mortality mechanics,
 stage progressions, endurance stress (8,000 frames), and audio DSP.
 """
 
+import os
+import socket
 import subprocess
 import sys
 import time
@@ -84,12 +86,34 @@ def main():
          "node tools/test_dual_hardware_flash_compat.js")
     ]
 
+    httpd = None
+    try:
+        with socket.create_connection(("127.0.0.1", 8085), timeout=0.3):
+            pass
+    except OSError:
+        httpd = subprocess.Popen(
+            [sys.executable, "-m", "http.server", "8085", "--directory", "web"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(0.4)
+
     total = len(steps)
     all_passed = True
-    for idx, (title, cmd) in enumerate(steps, 1):
-        if not run_step(idx, total, title, cmd):
-            all_passed = False
-            break
+    try:
+        for idx, (title, cmd) in enumerate(steps, 1):
+            if not run_step(idx, total, title, cmd):
+                all_passed = False
+                break
+    finally:
+        if httpd is not None:
+            httpd.terminate()
+            try:
+                httpd.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                httpd.kill()
+        if os.path.exists("tools/test_native_c_firmware"):
+            os.remove("tools/test_native_c_firmware")
 
     print("\n" + "=" * 78)
     if all_passed:

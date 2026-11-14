@@ -71,6 +71,8 @@ void pac_video_init(pac_video_t *v,
     }
 }
 
+#ifndef __GCC_PI32V2__
+
 static inline void draw_tile(pac_video_t *v, uint8_t tile_no, uint8_t pal_no, int bx, int by)
 {
     const uint16_t *pal = v->palette_rgb565[pal_no & 0x3F];
@@ -166,3 +168,118 @@ void pac_video_render(pac_video_t *v,
         for (int m = 232; m < 240; ++m) dst_row[m] = border_color;
     }
 }
+
+#else /* __GCC_PI32V2__ */
+
+static uint16_t s_band_native[20 * PAC_NATIVE_WIDTH];
+static uint16_t s_band_out[16 * FM1_SCREEN_SIZE];
+
+static inline void draw_tile_band(const pac_video_t *v, uint8_t tile_no, uint8_t pal_no,
+                                  int bx, int by, int y0, int y1)
+{
+    if (by + 8 <= y0 || by >= y1 || bx + 8 <= 0 || bx >= PAC_NATIVE_WIDTH) return;
+    const uint16_t *pal = v->palette_rgb565[pal_no & 0x3F];
+    const uint8_t *tile = &v->tiles_decoded[tile_no * 64];
+
+    for (int ty = 0; ty < 8; ++ty) {
+        int y = by + ty;
+        if (y < y0 || y >= y1 || y < 0 || y >= PAC_NATIVE_HEIGHT) continue;
+        uint16_t *dst = &s_band_native[(y - y0) * PAC_NATIVE_WIDTH];
+        const uint8_t *trow = &tile[ty * 8];
+        for (int tx = 0; tx < 8; ++tx) {
+            int x = bx + tx;
+            if (x >= 0 && x < PAC_NATIVE_WIDTH) {
+                dst[x] = pal[trow[tx]];
+            }
+        }
+    }
+}
+
+static inline void draw_sprite_band(const pac_video_t *v, uint8_t sprite_no, uint8_t pal_no,
+                                    int sx, int sy, bool flip_x, bool flip_y,
+                                    int y0, int y1)
+{
+    if (sy + 16 <= y0 || sy >= y1 || sx + 16 <= 0 || sx >= PAC_NATIVE_WIDTH) return;
+    const uint16_t *pal = v->palette_rgb565[pal_no & 0x3F];
+    const uint8_t *sprite = &v->sprites_decoded[(sprite_no & 0x3F) * 256];
+
+    for (int spr_y = 0; spr_y < 16; ++spr_y) {
+        int y = sy + spr_y;
+        if (y < y0 || y >= y1 || y < 0 || y >= PAC_NATIVE_HEIGHT) continue;
+        int py = flip_y ? (15 - spr_y) : spr_y;
+        const uint8_t *srow = &sprite[py * 16];
+        uint16_t *dst = &s_band_native[(y - y0) * PAC_NATIVE_WIDTH];
+        for (int spr_x = 0; spr_x < 16; ++spr_x) {
+            int x = sx + spr_x;
+            if (x < 0 || x >= PAC_NATIVE_WIDTH) continue;
+            int px = flip_x ? (15 - spr_x) : spr_x;
+            uint8_t color_idx = srow[px];
+            if (color_idx != 0) {
+                dst[x] = pal[color_idx];
+            }
+        }
+    }
+}
+
+void pac_video_render_bands(pac_video_t *v,
+                            const uint8_t *vram,
+                            const uint8_t *sprite_pos,
+                            const uint8_t *sprite_info,
+                            pac_band_blit_fn blit_fn)
+{
+    const uint16_t border_color = 0x0842;
+
+    for (unsigned out_y0 = 0; out_y0 < FM1_SCREEN_SIZE; out_y0 += 16U) {
+        unsigned h = (out_y0 + 16U <= FM1_SCREEN_SIZE) ? 16U : (FM1_SCREEN_SIZE - out_y0);
+        int in_y0 = (int)((out_y0 * 6U) / 5U);
+        int in_y1 = (int)(((out_y0 + h - 1U) * 6U) / 5U) + 1;
+
+        memset(s_band_native, 0, (size_t)(in_y1 - in_y0) * PAC_NATIVE_WIDTH * sizeof(uint16_t));
+
+        /* Bottom row */
+        int x = 31, y = 34, i = 0x000;
+        while (x != 31 || y != 36) {
+            draw_tile_band(v, vram[i], vram[i + 0x400], (x - 2) * 8, y * 8, in_y0, in_y1);
+            ++i;
+            if (x == 0) { x = 31; ++y; } else --x;
+        }
+        /* Middle playfield */
+        x = 29; y = 2; i = 0x040;
+        while (x != 1 || y != 2) {
+            draw_tile_band(v, vram[i], vram[i + 0x400], (x - 2) * 8, y * 8, in_y0, in_y1);
+            ++i;
+            if (y == 33) { y = 2; --x; } else ++y;
+        }
+        /* Top score row */
+        x = 31; y = 0; i = 0x3C0;
+        while (x != 31 || y != 2) {
+            draw_tile_band(v, vram[i], vram[i + 0x400], (x - 2) * 8, y * 8, in_y0, in_y1);
+            ++i;
+            if (x == 0) { x = 31; ++y; } else --x;
+        }
+
+        /* Sprites 7 down to 0 */
+        for (int s = 7; s >= 0; --s) {
+            int sx = PAC_NATIVE_WIDTH - sprite_pos[s * 2] + 15;
+            int sy = PAC_NATIVE_HEIGHT - sprite_pos[s * 2 + 1] - 16;
+            uint8_t info = sprite_info[s * 2];
+            uint8_t pal  = sprite_info[s * 2 + 1];
+            draw_sprite_band(v, info >> 2, pal, sx, sy, (info >> 1) & 1, info & 1, in_y0, in_y1);
+        }
+
+        for (unsigned r = 0; r < h; ++r) {
+            unsigned in_y = ((out_y0 + r) * 6U) / 5U;
+            const uint16_t *src_row = &s_band_native[(in_y - (unsigned)in_y0) * PAC_NATIVE_WIDTH];
+            uint16_t *dst_row = &s_band_out[r * FM1_SCREEN_SIZE];
+            for (int m = 0; m < 8; ++m) dst_row[m] = border_color;
+            memcpy(&dst_row[8], src_row, PAC_NATIVE_WIDTH * sizeof(uint16_t));
+            for (int m = 232; m < 240; ++m) dst_row[m] = border_color;
+        }
+
+        if (blit_fn) {
+            blit_fn(0, out_y0, FM1_SCREEN_SIZE, h, s_band_out, (size_t)FM1_SCREEN_SIZE * h);
+        }
+    }
+}
+
+#endif /* __GCC_PI32V2__ */

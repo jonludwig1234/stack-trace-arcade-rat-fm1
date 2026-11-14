@@ -442,6 +442,7 @@
     </div>
   </div>
   <div class="nav-buttons">
+    <a href="../arcade_rat_fm1.fwsc" download="arcade_rat_fm1.fwsc" class="nav-link" style="border-color:#00ff66;color:#00ff66;">⬇️ DOWNLOAD .FWSC FIRMWARE (469 KB)</a>
     <a href="fm1_pacman_preview.html" class="nav-link">🎮 OPEN ARCADE RAT SIMULATOR</a>
   </div>
 </div>
@@ -757,14 +758,13 @@ function showToast(msg) {
 
 // Action Button Handlers
 document.getElementById('btnExportBin').onclick = () => {
-  const payload = JSON.stringify({ slots: activeSlots, date: new Date().toISOString() });
-  const blob = new Blob([payload], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'FM1_TITAN_CUSTOM.fwsc';
+  a.href = '../arcade_rat_fm1.fwsc';
+  a.download = 'arcade_rat_fm1.fwsc';
+  document.body.appendChild(a);
   a.click();
-  showToast('Exported FM1_TITAN_CUSTOM.fwsc firmware package!');
+  document.body.removeChild(a);
+  showToast('Downloading compiled arcade_rat_fm1.fwsc (479,796 B · FM-1_8000014)!');
 };
 
 document.getElementById('btnExportHeader').onclick = () => {

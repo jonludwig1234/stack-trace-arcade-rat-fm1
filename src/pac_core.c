@@ -5,13 +5,21 @@
 #include "pacman_roms.h"
 #include <string.h>
 
+#ifdef __GCC_PI32V2__
+#include "fm1.h"
+#else
+#define FM1_AUDIO_CODE
+#endif
+
 #define PAC_CLOCK_HZ 3072000
 #define PAC_FPS 60
 #define PAC_CYCLES_PER_FRAME (PAC_CLOCK_HZ / PAC_FPS)
 
+#ifndef __GCC_PI32V2__
 /* Static RAM copy of program ROM if god-mode cheats need patching,
  * or direct pointer access to flash */
 static uint8_t prg_rom[0x4000];
+#endif
 
 static uint8_t mem_read(void *userdata, uint16_t addr)
 {
@@ -19,7 +27,17 @@ static uint8_t mem_read(void *userdata, uint16_t addr)
     addr &= 0x7FFF;
 
     if (addr < 0x4000) {
+#ifdef __GCC_PI32V2__
+        if (m->god_mode && (addr == 0x0315 || addr == 0x0316)) {
+            return 0x00;
+        }
+        if (addr < 0x1000) return pacman_rom_6e[addr];
+        if (addr < 0x2000) return pacman_rom_6f[addr - 0x1000];
+        if (addr < 0x3000) return pacman_rom_6h[addr - 0x2000];
+        return pacman_rom_6j[addr - 0x3000];
+#else
         return prg_rom[addr];
+#endif
     } else if (addr < 0x5000) {
         return m->ram[addr - 0x4000];
     } else if (addr <= 0x50FF) {
@@ -89,10 +107,12 @@ void pac_core_init(pac_machine_t *m)
     memset(m, 0, sizeof(*m));
 
     /* Assemble program ROM into writable buffer */
+#ifndef __GCC_PI32V2__
     memcpy(&prg_rom[0x0000], pacman_rom_6e, 0x1000);
     memcpy(&prg_rom[0x1000], pacman_rom_6f, 0x1000);
     memcpy(&prg_rom[0x2000], pacman_rom_6h, 0x1000);
     memcpy(&prg_rom[0x3000], pacman_rom_6j, 0x1000);
+#endif
 
     /* Initialize CPU */
     z80_init(&m->cpu);
@@ -119,7 +139,9 @@ void pac_core_frame(pac_machine_t *m)
     if (m->mode == PAC_MODE_SYNTH) {
         /* In Synth Mode, bypass Z80 and draw the interactive oscilloscope UI */
         pac_synth_tick(&m->synth, &m->wsg);
+#ifndef __GCC_PI32V2__
         pac_synth_draw_ui(&m->synth, pacman_sound_rom1, m->screen_buffer);
+#endif
         return;
     }
 
@@ -135,8 +157,10 @@ void pac_core_frame(pac_machine_t *m)
     /* Trigger VBLANK interrupt & render video */
     if (m->vblank_enabled) {
         z80_gen_int(&m->cpu, m->int_vector);
+#ifndef __GCC_PI32V2__
         pac_video_render(&m->video, m->ram, m->sprite_pos,
                          &m->ram[0x0FF0], m->screen_buffer);
+#endif
     }
 
     if (m->god_mode) {
@@ -147,7 +171,19 @@ void pac_core_frame(pac_machine_t *m)
     }
 }
 
-void pac_core_audio(pac_machine_t *m, int32_t *pcm, unsigned frames)
+#ifdef __GCC_PI32V2__
+void pac_core_render_bands(pac_machine_t *m, pac_band_blit_fn blit_fn)
+{
+    if (m->mode == PAC_MODE_SYNTH) {
+        pac_synth_draw_ui_bands(&m->synth, pacman_sound_rom1, blit_fn);
+    } else if (m->vblank_enabled) {
+        pac_video_render_bands(&m->video, m->ram, m->sprite_pos,
+                               &m->ram[0x0FF0], blit_fn);
+    }
+}
+#endif
+
+FM1_AUDIO_CODE void pac_core_audio(pac_machine_t *m, int32_t *pcm, unsigned frames)
 {
     wsg_render_stereo(&m->wsg, pcm, frames);
 }
@@ -157,13 +193,17 @@ void pac_core_toggle_cheat(pac_machine_t *m)
     m->god_mode = !m->god_mode;
     if (m->god_mode) {
         /* Unlimited lives patch: NOP out SUB 1 at 0x0315 so Pac-Man never loses a life on death */
+#ifndef __GCC_PI32V2__
         prg_rom[0x0315] = 0x00;
         prg_rom[0x0316] = 0x00;
+#endif
         m->ram[0x4e6e - 0x4000] = 99;
     } else {
         /* Restore original SUB 1 opcode (D6 01) */
+#ifndef __GCC_PI32V2__
         prg_rom[0x0315] = 0xd6;
         prg_rom[0x0316] = 0x01;
+#endif
         m->ram[0x4e6e - 0x4000] = 3;
     }
 }

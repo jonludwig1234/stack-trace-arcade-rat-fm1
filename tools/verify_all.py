@@ -84,6 +84,75 @@ def verify():
     assert "0xB36014" in sim or "0xB36014" in cfg, "UCUN 0xB36014 ID missing from documentation/UI!"
     print(" Dual-Hardware Compatibility verified for Old (Puya 0x856014) and New (UCUN 0xB36014) FM-1 devices.")
 
+    # 10. Check Precompiled .fwsc Firmware Container, CRC16, Product Identity & Download Links
+    import hashlib
+    import os
+    import struct
+
+    def _crc16(buf):
+        c = 0
+        for b in buf:
+            c ^= b << 8
+            for _ in range(8):
+                c = ((c << 1) ^ (0x1021 if (c & 0x8000) else 0)) & 0xFFFF
+        return c
+
+    def _decode(buf, key=65535):
+        out = bytearray(buf)
+        k = key
+        for i in range(len(out)):
+            out[i] ^= k & 0xFF
+            k = ((k << 1) ^ (0x1021 if (k & 0x8000) else 0)) & 0xFFFF
+        return bytes(out)
+
+    for rel in ("arcade_rat_fm1.fwsc", "firmware/arcade_rat_fm1.fwsc", "firmware/SHA256SUMS.txt", "index.html"):
+        assert os.path.isfile(rel), f"Missing required release deliverable: {rel}"
+
+    fw_root = open("arcade_rat_fm1.fwsc", "rb").read()
+    fw_sub = open("firmware/arcade_rat_fm1.fwsc", "rb").read()
+    assert fw_root == fw_sub, "Root arcade_rat_fm1.fwsc and firmware/arcade_rat_fm1.fwsc do not match!"
+    assert 1024 <= len(fw_root) <= 2097152, f"Invalid .fwsc size: {len(fw_root)}"
+
+    image = bytearray(len(fw_root) - 20)
+    product = ""
+    ended = False
+    for i in range(20):
+        image[i * 47 : i * 47 + 47] = fw_root[i * 48 : i * 48 + 47]
+        marker = fw_root[i * 48 + 47]
+        if marker == 125:
+            ended = True
+        else:
+            c = (marker - i - 1) & 0xFF
+            assert not ended and 32 <= c <= 126, "Invalid FM-1 product identity encoding in .fwsc"
+            product += chr(c)
+    image[940:] = fw_root[960:]
+    assert product == "FM-1_8000014", f"Unexpected .fwsc product identity: {product!r}"
+
+    head = _decode(image[:64])
+    count = struct.unpack_from("<H", head, 8)[0]
+    assert struct.unpack_from("<H", head, 0)[0] == _crc16(head[2:]), ".fwsc header CRC16 mismatch"
+    assert struct.unpack_from("<I", head, 4)[0] == len(image), ".fwsc decoded image size mismatch"
+    assert head[16:32].split(b"\x00", 1)[0] == b"AC791N", "Unexpected JieLi chip ID in .fwsc"
+    table = bytes(image[64 : 64 + count * 80])
+    assert _crc16(table) == struct.unpack_from("<H", head, 2)[0], ".fwsc table CRC16 mismatch"
+    entries = {}
+    for idx in range(count):
+        rec = _decode(table[idx * 80 : (idx + 1) * 80])
+        rtype, _rid, rcrc, _pad, roff, rsize, rstored = struct.unpack_from("<HHHHIII", rec, 0)
+        rname = rec[64:].split(b"\x00", 1)[0].decode("ascii")
+        assert _crc16(image[roff : roff + rsize]) == rcrc, f".fwsc payload CRC16 mismatch for {rname}"
+        entries[rname] = (rtype, rsize, rstored)
+    assert "flash.bin" in entries and entries["flash.bin"][0] == 0
+    assert "ota.bin" in entries and entries["ota.bin"][0] == 100
+
+    expected_sha = hashlib.sha256(fw_root).hexdigest()
+    sha_txt = open("firmware/SHA256SUMS.txt", "r").read()
+    assert expected_sha in sha_txt, "firmware/SHA256SUMS.txt does not match arcade_rat_fm1.fwsc!"
+    assert "../arcade_rat_fm1.fwsc" in cfg, "Configurator missing direct .fwsc download link!"
+    assert "JSON.stringify({ slots: activeSlots" not in cfg, "Configurator still has fake JSON .fwsc export!"
+    assert "../arcade_rat_fm1.fwsc" in sim, "Simulator missing direct .fwsc download link!"
+    print(f" Precompiled FM-1 firmware .fwsc validated ({len(fw_root)} B, product={product}, sha256={expected_sha[:12]}...).")
+
     print("\n ALL VERIFICATION CHECKS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":

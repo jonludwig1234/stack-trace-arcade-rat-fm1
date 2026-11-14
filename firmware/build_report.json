@@ -1,0 +1,70 @@
+{
+  "release_version": "V14",
+  "build_identity": "9d97857cb33502606a649fc93dbaa4c0881ef3ad30998ba16b45861742c406ac",
+  "firmware_sha256": "a503dd43d03738fd4b57197233799ade7d7beae349cb2011f2ce13c256e9fa6b",
+  "section_bytes": {
+    "text": 360672,
+    "data": 0,
+    "ram0_data": 80744,
+    "cache_ram_data": 32
+  },
+  "elf": {
+    "elf_sha256": "7c332514ebbb56cf7a86333da9a058e96dfbd62a6a59774cee21fb53c8d2ecb0",
+    "runtime_heap_bytes": 196748,
+    "minimum_runtime_heap_bytes": 49152,
+    "sections": [
+      {
+        "name": ".text",
+        "addr": 33554720,
+        "bytes": 360672,
+        "nobits": false
+      },
+      {
+        "name": ".ram0_data",
+        "addr": 29360128,
+        "bytes": 80744,
+        "nobits": false
+      },
+      {
+        "name": ".ram0_bss",
+        "addr": 29440872,
+        "bytes": 246048,
+        "nobits": true
+      },
+      {
+        "name": ".boot_info",
+        "addr": 29883724,
+        "bytes": 52,
+        "nobits": false
+      },
+      {
+        "name": ".cache_ram_data",
+        "addr": 32669696,
+        "bytes": 32,
+        "nobits": false
+      }
+    ],
+    "arcade_sram_addrs": {
+      "fm1_pacman_active": "0x01c015da",
+      "fm1_pacman_audio_mix": "0x01c015e4",
+      "pac_core_audio": "0x01c01604",
+      "wsg_render_stereo": "0x01c01612"
+    }
+  },
+  "package": {
+    "fits": true,
+    "packager": "Package.cs-equivalent",
+    "product": "FM-1_8000014",
+    "app_bin_bytes": 441448,
+    "max_app_bin_bytes": 453921,
+    "FLASH_BIN_SIZE": 458752,
+    "MAX_IMAGE_SIZE": 471040,
+    "VM_START_ADDR": 458752,
+    "VM_END_ADDR": 503808,
+    "VM_REAL_SIZE": 45056,
+    "vm_extra_gap_bytes": 12288,
+    "btif_bytes": 4096,
+    "user_bytes": 536576,
+    "fwsc_bytes": 479796
+  }
+}

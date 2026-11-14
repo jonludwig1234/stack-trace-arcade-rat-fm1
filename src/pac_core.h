@@ -35,12 +35,17 @@ typedef struct {
     bool key_coin, key_start1, key_start2, key_rack_advance;
     bool god_mode;
 
+#ifndef __GCC_PI32V2__
     /* Framebuffer for FM-1 ST7789 (240x240 RGB565) */
     uint16_t screen_buffer[FM1_SCREEN_SIZE * FM1_SCREEN_SIZE];
+#endif
 } pac_machine_t;
 
 void pac_core_init(pac_machine_t *m);
 void pac_core_frame(pac_machine_t *m);
+#ifdef __GCC_PI32V2__
+void pac_core_render_bands(pac_machine_t *m, pac_band_blit_fn blit_fn);
+#endif
 void pac_core_audio(pac_machine_t *m, int32_t *pcm, unsigned frames);
 void pac_core_toggle_cheat(pac_machine_t *m);
 void pac_core_advance_level(pac_machine_t *m);

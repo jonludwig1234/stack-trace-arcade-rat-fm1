@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE RAT v1.0 · M-VAVE FM-1 Custom Firmware</title>
+<style>
+  :root {
+    --bg: #0c1014;
+    --card: #131920;
+    --border: #26333d;
+    --accent: #aae4c8;
+    --neon: #00ff66;
+    --cyan: #00e5ff;
+    --text: #e6eef2;
+    --muted: #8ea3ae;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at top, #17222b 0%, var(--bg) 65%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .container {
+    max-width: 780px;
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--neon);
+    background: rgba(0, 255, 102, 0.1);
+    border: 1px solid rgba(0, 255, 102, 0.35);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  p.lead {
+    color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  a.btn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #18212a;
+    color: var(--text);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  a.btn:hover { transform: translateY(-2px); border-color: var(--cyan); }
+  a.btn.primary { border-color: var(--neon); background: rgba(0, 255, 102, 0.08); }
+  a.btn strong { font-size: 0.95rem; }
+  a.btn span { font-size: 0.76rem; color: var(--muted); }
+  .meta {
+    background: #0d1217;
+    border: 1px solid #1f2a33;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+    line-height: 1.65;
+    word-break: break-all;
+  }
+  .meta a { color: var(--cyan); }
+</style>
+</head>
+<body>
+  <main class="container">
+    <div class="badge">M-VAVE FM-1 · REV 1 (PUYA 0x856014) &amp; REV 2 (UCUN 0xB36014)</div>
+    <h1>ARCADE RAT v1.0</h1>
+    <p class="lead">
+      Bare-metal Z80 Pac-Man arcade core &amp; 3-voice Namco WSG synthesizer compiled for JieLi AC791N (M-VAVE FM-1),
+      alongside the 8-game / 5-chip WebAudio studio simulator and 93-game configurator.
+    </p>
+    <div class="actions">
+      <a class="btn primary" href="arcade_rat_fm1.fwsc" download="arcade_rat_fm1.fwsc">
+        <strong>Download Firmware (.fwsc)</strong>
+        <span>arcade_rat_fm1.fwsc · 479,796 bytes</span>
+      </a>
+      <a class="btn" href="web/fm1_pacman_preview.html">
+        <strong>Launch Web Simulator</strong>
+        <span>8 Arcade Engines · 5 Synths · Tracker · Speech</span>
+      </a>
+      <a class="btn" href="web/configurator.html">
+        <strong>Open Firmware Configurator</strong>
+        <span>93-Game Catalog &amp; Key Mapping</span>
+      </a>
+    </div>
+    <div class="meta">
+      <div>Product Identity: FM-1_8000014 (M-VAVE FM-1 WebUSB / SysEx &amp; Flasher Compatible)</div>
+      <div>Hardware Toggle: Press REC + MUTE on FM-1 panel to toggle Arcade Rat &lt;-&gt; Groovebox Synth</div>
+      <div>SHA-256: a503dd43d03738fd4b57197233799ade7d7beae349cb2011f2ce13c256e9fa6b</div>
+      <div>
+        Artifacts:
+        <a href="firmware/SHA256SUMS.txt">firmware/SHA256SUMS.txt</a> ·
+        <a href="firmware/build_report.json">firmware/build_report.json</a> ·
+        <a href="https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1">GitHub Repo</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

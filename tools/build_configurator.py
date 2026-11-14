@@ -138,6 +138,7 @@ html_template = """<!DOCTYPE html>
     <p>93-Game Master Archive · Hardware Key Re-mapper · Chiptune Soundchip Allocator</p>
   </div>
   <div class="nav-buttons">
+    <a href="../arcade_rat_fm1.fwsc" download="arcade_rat_fm1.fwsc" class="nav-link" style="border-color:#2ecc71;color:#2ecc71;">⬇️ Download .fwsc Firmware</a>
     <a href="fm1_pacman_preview.html" class="nav-link">🕹️ Launch Web Simulator</a>
     <a href="#" class="nav-link active">⚙️ Configurator</a>
   </div>
@@ -417,14 +418,13 @@ function showToast(msg) {
 
 // Action Button Handlers
 document.getElementById('btnExportBin').onclick = () => {
-  const payload = JSON.stringify({ slots: activeSlots, date: new Date().toISOString() });
-  const blob = new Blob([payload], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'FM1_TITAN_CUSTOM.fwsc';
+  a.href = '../arcade_rat_fm1.fwsc';
+  a.download = 'arcade_rat_fm1.fwsc';
+  document.body.appendChild(a);
   a.click();
-  showToast('Exported FM1_TITAN_CUSTOM.fwsc firmware package!');
+  document.body.removeChild(a);
+  showToast('Downloading compiled arcade_rat_fm1.fwsc firmware package!');
 };
 
 document.getElementById('btnExportHeader').onclick = () => {

@@ -1,5 +1,10 @@
 ### ARCADE RAT v1.0.0 Community Release & Dual-Hardware Update
 
+⬇️ **Download Precompiled FM-1 Firmware (.fwsc · 479,796 bytes · `FM-1_8000014`):**
+https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/arcade_rat_fm1.fwsc
+- **SHA-256:** `a503dd43d03738fd4b57197233799ade7d7beae349cb2011f2ce13c256e9fa6b`
+- **Verified:** PI32v2 ELF + internal SRAM audio ISR + `_MALLOC_SIZE` `196,748` B + `WebUpdate.js` `inspectPackage()` check (`app.bin` `441,448` B)
+
 🎬 **Watch / Download 1080p Video Showcase (MP4):**
 https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/fm1_firmware_showcase_demo.mp4
 

@@ -4,11 +4,26 @@
 #include "pac_wsg.h"
 #include <string.h>
 
+#ifdef __GCC_PI32V2__
+#include "fm1.h"
+static uint8_t s_wsg_sound_rom[256] FM1_AUDIO_DATA;
+#else
+#define FM1_AUDIO_CODE
+#endif
+
 void wsg_init(wsg_chip_t *w, const uint8_t *sound_rom)
 {
     memset(w, 0, sizeof(*w));
+#ifdef __GCC_PI32V2__
+    if (sound_rom) {
+        memcpy(s_wsg_sound_rom, sound_rom, 256);
+    }
+    w->sound_rom = s_wsg_sound_rom;
+    w->gain = 8192; /* 24-bit PCM headroom on FM-1 hardware */
+#else
     w->sound_rom = sound_rom;
     w->gain = 512; /* Q8 scaling for FM-1 32-bit audio pipeline */
+#endif
     w->enabled = true;
 
     /* Stereo separation across the 3 arcade voices */
@@ -63,7 +78,7 @@ void wsg_write(wsg_chip_t *w, uint8_t address, uint8_t value)
     }
 }
 
-void wsg_render_stereo(wsg_chip_t *w, int32_t *out_stereo, unsigned frames)
+FM1_AUDIO_CODE void wsg_render_stereo(wsg_chip_t *w, int32_t *out_stereo, unsigned frames)
 {
     if (!w->enabled || !w->sound_rom) return;
 
@@ -77,7 +92,11 @@ void wsg_render_stereo(wsg_chip_t *w, int32_t *out_stereo, unsigned frames)
             wsg_voice_t *voice = &w->voices[v];
             if (!voice->frequency || !voice->volume) continue;
 
+#ifdef __GCC_PI32V2__
+            uint32_t step = (voice->frequency << 1) + ((voice->frequency * 2898U) >> 14);
+#else
             uint32_t step = (uint32_t)(((uint64_t)voice->frequency * 320U) / 147U);
+#endif
             voice->accumulator = (voice->accumulator + step) & 0xFFFFF;
 
             /* Highest 5 bits of the 20-bit accumulator index the 32 samples */

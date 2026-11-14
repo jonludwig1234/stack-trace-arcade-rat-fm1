@@ -82,20 +82,37 @@ It transforms the pocket FM-1 synth into a full-fledged 80s arcade sound chip la
 
 ---
 
-## 🚀 Installation & Flashing on M-VAVE FM-1
+## 🚀 Precompiled Firmware Download & Installation on M-VAVE FM-1
+
+### Direct Precompiled `.fwsc` Binary (Ready to Flash)
+- **GitHub Release Asset:** [`arcade_rat_fm1.fwsc`](https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1/releases/download/v1.0.0/arcade_rat_fm1.fwsc)
+- **Repository Copies:** [`arcade_rat_fm1.fwsc`](arcade_rat_fm1.fwsc) & [`firmware/arcade_rat_fm1.fwsc`](firmware/arcade_rat_fm1.fwsc)
+- **Size:** `479,796` bytes (`app.bin` `441,448` B / `458,752` B AC791N flash image; `_MALLOC_SIZE` `196,748` B)
+- **Product Identity:** `FM-1_8000014` (Verified with `fm1_open/sdk/WebUpdate.js` `inspectPackage()`)
+- **SHA-256:** `a503dd43d03738fd4b57197233799ade7d7beae349cb2011f2ce13c256e9fa6b` ([`firmware/SHA256SUMS.txt`](firmware/SHA256SUMS.txt), [`firmware/build_report.json`](firmware/build_report.json))
 
 ### Community Repositories & Hubs
 This firmware is compatible with community flashing utilities and repositories:
 - **Central Community Directory:** Listed in [aroum/fm1-custom-fw](https://github.com/aroum/fm1-custom-fw)
-- **Flashing Utility:** Use [M-Flasher](https://github.com/jvitkauskas/M-Flasher) or the official `M-UPGRADE` tool.
+- **Flashing Utility:** Use [M-Flasher](https://github.com/jvitkauskas/M-Flasher), WebUSB `FM1 Update`, or the official `M-UPGRADE` tool.
 
-### Flashing Steps
-1. Put the M-VAVE FM-1 into bootloader/download mode (hold the first rotary encoder / boot pin while connecting USB-C).
-2. Run `m-flasher` or `upgrade.py`:
+### Flashing & Hardware Controls
+1. Put the M-VAVE FM-1 into bootloader/download mode (hold the first rotary encoder / boot pin while connecting USB-C), or flash `arcade_rat_fm1.fwsc` directly via `m-flasher`:
    ```bash
    m-flasher flash arcade_rat_fm1.fwsc
    ```
-3. Reboot device.
+2. Reboot device. Arcade Rat boots straight into the bare-metal Z80 Pac-Man + Namco WSG core:
+   - **Keys 12 / 14 / 16 / 17 (C4/D4/E4/F4):** Left / Up / Down / Right
+   - **REC (`Btn 0`) / PLAY (`Btn 1`):** Insert Coin / 1P Start
+   - **STOP (`Btn 2`):** Toggle God Mode (unlimited lives)
+   - **MUTE (`Btn 3`):** Toggle Pac-Man Arcade <-> Namco WSG 3-Voice Synth
+   - **REC + MUTE Combo:** Toggle between Arcade Rat and FM-1 Groovebox Synth fallback (`groove_midi_local`)
+
+### Building From Source (PI32v2 Toolchain)
+```bash
+python3 tools/build_firmware_package.py
+```
+Compiles `fm1_open/app/*.c` + `src/*.c` via JieLi PI32v2 `clang.exe` / `pi32v2-ld.exe` (`wine`), verifies ELF/SRAM callbacks and `_MALLOC_SIZE >= 49152`, packages the AC791N `.fwsc` container, and validates it with `fm1_open/sdk/WebUpdate.js` (`inspectPackage()`).
 
 ---
 

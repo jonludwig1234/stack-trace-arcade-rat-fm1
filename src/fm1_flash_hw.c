@@ -6,11 +6,16 @@
 #include <string.h>
 
 /* Optional weak FM1 SDK bindings (present on device builds, mocked in unit tests) */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__GCC_PI32V2__)
 __attribute__((weak)) uint32_t fm1_flash_size(void) { return FM1_FLASH_TOTAL_BYTES; }
 __attribute__((weak)) int fm1_flash_read(uint32_t offset, void *data, size_t bytes);
 __attribute__((weak)) int fm1_flash_write(uint32_t offset, const void *data, size_t bytes);
 __attribute__((weak)) int fm1_flash_erase(uint32_t offset);
+#elif defined(__GCC_PI32V2__)
+extern uint32_t fm1_flash_size(void);
+extern int fm1_flash_read(uint32_t offset, void *data, size_t bytes);
+extern int fm1_flash_write(uint32_t offset, const void *data, size_t bytes);
+extern int fm1_flash_erase(uint32_t offset);
 #endif
 
 /* Hardware state descriptor */
@@ -26,9 +31,11 @@ static fm1_flash_hw_info_t g_flash_hw = {
     .is_initialized = false
 };
 
+#ifndef __GCC_PI32V2__
 /* Emulated hardware Flash buffer for unit testing or offline simulation */
 static uint8_t s_mock_flash_mem[FM1_FLASH_SECTOR_SIZE * 2];
 static bool s_use_internal_mem = false;
+#endif
 
 /* CRC-32 (IEEE 802.3 standard) lookup table */
 static uint32_t s_crc32_table[256];
@@ -109,9 +116,11 @@ int fm1_flash_hw_init(uint32_t detected_jedec_id)
 
     g_flash_hw.is_initialized = true;
 
+#ifndef __GCC_PI32V2__
     /* Initialize internal memory buffer to 0xFF (erased state) */
     memset(s_mock_flash_mem, 0xFF, sizeof(s_mock_flash_mem));
     s_use_internal_mem = true;
+#endif
 
     return 0;
 }
@@ -137,6 +146,9 @@ int fm1_flash_hw_read(uint32_t offset, void *data, size_t bytes)
     if (!data || bytes == 0) return -1;
     if (offset + bytes > FM1_FLASH_TOTAL_BYTES) return -1;
 
+#ifdef __GCC_PI32V2__
+    return fm1_flash_read(offset, data, bytes);
+#else
     if (!s_use_internal_mem && fm1_flash_read) {
         return fm1_flash_read(offset, data, bytes);
     }
@@ -148,6 +160,7 @@ int fm1_flash_hw_read(uint32_t offset, void *data, size_t bytes)
     }
     memcpy(data, &s_mock_flash_mem[local_off], bytes);
     return 0;
+#endif
 }
 
 int fm1_flash_hw_erase_sector(uint32_t offset)
@@ -156,6 +169,9 @@ int fm1_flash_hw_erase_sector(uint32_t offset)
     if ((offset % FM1_FLASH_SECTOR_SIZE) != 0) return -1;
     if (offset >= FM1_FLASH_TOTAL_BYTES) return -1;
 
+#ifdef __GCC_PI32V2__
+    return fm1_flash_erase(offset);
+#else
     if (!s_use_internal_mem && fm1_flash_erase) {
         return fm1_flash_erase(offset);
     }
@@ -163,6 +179,7 @@ int fm1_flash_hw_erase_sector(uint32_t offset)
     uint32_t local_off = offset % sizeof(s_mock_flash_mem);
     memset(&s_mock_flash_mem[local_off], 0xFF, FM1_FLASH_SECTOR_SIZE);
     return 0;
+#endif
 }
 
 int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
@@ -173,6 +190,9 @@ int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
         fm1_flash_hw_unprotect();
     }
 
+#ifdef __GCC_PI32V2__
+    return fm1_flash_write(offset, data, bytes);
+#else
     if (!s_use_internal_mem && fm1_flash_write) {
         return fm1_flash_write(offset, data, bytes);
     }
@@ -188,6 +208,7 @@ int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
         s_mock_flash_mem[local_off + i] &= src[i];
     }
     return 0;
+#endif
 }
 
 int fm1_nvram_save(const void *data, size_t size)

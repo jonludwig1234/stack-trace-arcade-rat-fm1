@@ -691,7 +691,11 @@ static inline void process_interrupts(z80* const z) {
       break;
 
     default:
+#ifndef __GCC_PI32V2__
       fprintf(stderr, "unsupported interrupt mode %d\n", z->interrupt_mode);
+#else
+      (void)0;
+#endif
       break;
     }
 
@@ -772,6 +776,7 @@ void z80_step(z80* const z) {
 
 // outputs to stdout a debug trace of the emulator
 void z80_debug_output(z80* const z) {
+#ifndef __GCC_PI32V2__
   printf("PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, "
          "IX: %04X, IY: %04X, I: %02X, R: %02X",
       z->pc, (z->a << 8) | get_f(z), get_bc(z), get_de(z), get_hl(z), z->sp,
@@ -779,6 +784,9 @@ void z80_debug_output(z80* const z) {
 
   printf("\t(%02X %02X %02X %02X), cyc: %lu\n", rb(z, z->pc), rb(z, z->pc + 1),
       rb(z, z->pc + 2), rb(z, z->pc + 3), z->cyc);
+#else
+  (void)z;
+#endif
 }
 
 // function to call when an NMI is to be serviced
@@ -1240,7 +1248,13 @@ void exec_opcode(z80* const z, uint8_t opcode) {
   case 0xDD: exec_opcode_ddfd(z, nextb(z), &z->ix); break;
   case 0xFD: exec_opcode_ddfd(z, nextb(z), &z->iy); break;
 
-  default: fprintf(stderr, "unknown opcode %02X\n", opcode); break;
+  default:
+#ifndef __GCC_PI32V2__
+    fprintf(stderr, "unknown opcode %02X\n", opcode);
+#else
+    (void)opcode;
+#endif
+    break;
   }
 }
 
@@ -1490,7 +1504,13 @@ void exec_opcode_dcb(z80* const z, uint8_t opcode, uint16_t addr) {
   case 2: result = val & ~(1 << y_); break; // res y, (iz+d)
   case 3: result = val | (1 << y_); break; // set y, (iz+d)
 
-  default: fprintf(stderr, "unknown XYCB opcode: %02X\n", opcode); break;
+  default:
+#ifndef __GCC_PI32V2__
+    fprintf(stderr, "unknown XYCB opcode: %02X\n", opcode);
+#else
+    (void)opcode;
+#endif
+    break;
   }
 
   // ld r[z], rot[y] (iz+d)
@@ -1766,7 +1786,13 @@ void exec_opcode_ed(z80* const z, uint8_t opcode) {
     z->mem_ptr = get_hl(z) + 1;
   } break; // rld
 
-  default: fprintf(stderr, "unknown ED opcode: %02X\n", opcode); break;
+  default:
+#ifndef __GCC_PI32V2__
+    fprintf(stderr, "unknown ED opcode: %02X\n", opcode);
+#else
+    (void)opcode;
+#endif
+    break;
   }
 }
 
