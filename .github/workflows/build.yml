@@ -10,20 +10,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup RISC-V Toolchain (JieLi AC791N)
+    - uses: actions/checkout@v4
+
+    - name: Setup Build & Verification Toolchain
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-riscv64-unknown-elf make python3
-        
-    - name: Build Firmware
+        sudo apt-get install -y gcc make python3
+
+    - name: Build & Verify Firmware
       run: |
         make clean
         make all
-        
+
     - name: Upload .fwsc Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: arcade_rat_fm1_build
-        path: build/arcade_rat_fm1.fwsc
+        path: |
+          build/arcade_rat_fm1.fwsc
+          build/SHA256SUMS.txt

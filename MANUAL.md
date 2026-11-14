@@ -1,19 +1,24 @@
-# Arcade Rat v1.0 - User Manual
+# Arcade Rat v1.0 — User Manual
 
-## Hardware Controls
-* **Rotary 1 (Left):** Master Volume / Tracker Tempo (BPM)
-* **Rotary 2:** DSP Rack Control (Filter Cutoff & Tape Delay time)
-* **Rotary 3:** Instrument / Synth Model Select
-* **Rotary 4 (Right):** Master Engine Select (Turn to cycle through Z80 Arcade, 5-Chip Studio, Tracker, and SFX Board)
+## Flashing Precompiled Firmware (`arcade_rat_fm1.fwsc`)
+
+1. Download `arcade_rat_fm1.fwsc` (`FM-1_8000014`, 479,796 bytes) and optionally verify its SHA-256 against `firmware/SHA256SUMS.txt`.
+2. Connect your M-VAVE FM-1 via USB-C and open `web/configurator.html` in a WebMIDI-capable browser (or use the M-UPGRADE web flasher / `m-flasher`).
+3. Put the unit into bootloader/update mode as needed by your flasher (dual-verified across both Old Rev 1 Puya `0x856014` and New Rev 2 UCUN `0xB36014` flash hardware) and flash `arcade_rat_fm1.fwsc`.
+
+## Mode Switching on FM-1 Hardware
+
+* **`REC + MUTE` Combo (`0x09`)**: Hold **REC** and press **MUTE** simultaneously to toggle between **Arcade / 5-Chip Synth Mode** and the stock **FM-1 Groovebox Mode**.
+* **MASTER Knob**: Adjusts master output volume across both modes.
+
+## Arcade & Synth Controls (Software Simulator & Hardware Mapping)
+
+* **Engine Selection**: Cycle through Z80 Arcade Cores (Pac-Man, Ms. Pac-Man, Galaga, Donkey Kong), 5-Chip Synth Models (`YM2612`, `SID 6581`, `NES 2A03`, `SN76489`, `WSG`, etc.), 16-Step Multi-Chip Tracker, and Arcade SFX Board.
+* **Synth Keys & Octave Controls**: Play chromatic notes across octaves, trigger factory synth/tracker presets, and adjust DSP filter/delay parameters in real time.
 
 ## 16-Step Multi-Chip Tracker
-When the Tracker Engine is selected (via Rotary 4):
-* **Keys 1-16 (White & Black):** Toggle sequencer steps for the active channel on/off.
-* **Key 17 (C3):** Cycle through the 4 hardware tracks.
-* **Key 27 (High C):** Play / Stop Tracker.
-* **Hold Rotary 3 + Press Key 1-8:** Load one of the 8 Factory Patterns (e.g., *Pac-Mania Dub*, *Bach Toccata*).
 
-## Synthesizer & SFX Modes
-* **Keys 1-27:** Standard piano layout for chromatic playback across 8 octaves.
-* **Octave Buttons (+/-):** Shift active scale up or down.
-* **Bootloader Mode:** Hold Rotary 1 down while plugging in the USB-C cable to prep for `m-flasher`.
+When the Tracker Engine is active:
+* **Step Buttons (1–16)**: Toggle sequencer steps for the active track on/off.
+* **Track Select & Transport**: Switch between tracks and start/stop step playback.
+* **Factory Patterns**: Load built-in multi-chip patterns directly from the pattern bank.

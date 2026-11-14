@@ -19,3 +19,4 @@ test_snap.png
 # Large raw video/renders (kept in brain / web releases)
 tools/node_modules/
 .hermes/
+build/
