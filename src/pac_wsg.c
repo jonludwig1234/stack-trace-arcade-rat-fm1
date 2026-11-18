@@ -34,6 +34,7 @@ void wsg_init(wsg_chip_t *w, const uint8_t *sound_rom)
 
 void wsg_write(wsg_chip_t *w, uint8_t address, uint8_t value)
 {
+    if (!w) return;
     /* Voice 0 (addresses 0x00..0x05, 0x10..0x15) */
     if (address == 0x05) {
         w->voices[0].waveform_no = value & 0x07;
@@ -80,7 +81,7 @@ void wsg_write(wsg_chip_t *w, uint8_t address, uint8_t value)
 
 FM1_AUDIO_CODE void wsg_render_stereo(wsg_chip_t *w, int32_t *out_stereo, unsigned frames)
 {
-    if (!w->enabled || !w->sound_rom) return;
+    if (!w || !out_stereo || frames == 0 || !w->enabled || !w->sound_rom) return;
 
     /* Pitch ratio conversion from 96kHz arcade clock to 44.1kHz:
      * step = frequency * 96000 / 44100 = frequency * 320 / 147 */
@@ -100,7 +101,7 @@ FM1_AUDIO_CODE void wsg_render_stereo(wsg_chip_t *w, int32_t *out_stereo, unsign
             voice->accumulator = (voice->accumulator + step) & 0xFFFFF;
 
             /* Highest 5 bits of the 20-bit accumulator index the 32 samples */
-            uint32_t sample_idx = (voice->waveform_no * 32U) + (voice->accumulator >> 15);
+            uint32_t sample_idx = ((voice->waveform_no & 0x07U) * 32U) + (voice->accumulator >> 15);
             int16_t raw_nibble = (int16_t)(w->sound_rom[sample_idx] & 0x0F) - 8;
             int32_t samp = raw_nibble * (int32_t)voice->volume;
 

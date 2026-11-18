@@ -27,9 +27,11 @@ extern "C" {
 #define FM1_NVRAM_MAGIC          0x41545346U     /* "FSTA" (FM1 STACK TRACE ARCADE) */
 
 /* NVRAM storage allocation within user Flash:
- * In FM-1 SDK, user storage starts at FlashLimit - UserSize (0x7D000 = 512KB offset)
+ * Dual-sector ping-pong (A/B) storage for power-loss-safe atomic updates.
  */
 #define FM1_NVRAM_OFFSET_DEFAULT 0x0007D000U
+#define FM1_NVRAM_OFFSET_BACKUP  (FM1_NVRAM_OFFSET_DEFAULT + FM1_FLASH_SECTOR_SIZE)
+#define FM1_NVRAM_VERSION        1U
 
 typedef enum {
     FM1_HW_REV_UNKNOWN = 0,
@@ -80,6 +82,11 @@ int  fm1_nvram_erase(void);
 
 /* CRC32 Utility */
 uint32_t fm1_calc_crc32(const void *data, size_t length);
+
+#ifndef __GCC_PI32V2__
+/* Host-only fault-injection helper (-1 = disabled, 0 = fail immediately, >0 = succeed N times then fail) */
+void fm1_flash_hw_set_mock_faults(int read_fail_after, int write_fail_after, int erase_fail_after);
+#endif
 
 #ifdef __cplusplus
 }

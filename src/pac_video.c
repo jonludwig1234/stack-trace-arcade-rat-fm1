@@ -28,6 +28,7 @@ void pac_video_init(pac_video_t *v,
                     const uint8_t *tile_rom,
                     const uint8_t *sprite_rom)
 {
+    if (!v || !color_rom || !palette_rom || !tile_rom || !sprite_rom) return;
     memset(v, 0, sizeof(*v));
 
     /* 1. Decode 32-color PROM into RGB565 */
@@ -91,7 +92,7 @@ static inline void draw_sprite(pac_video_t *v, uint8_t sprite_no, uint8_t pal_no
                                int sx, int sy, bool flip_x, bool flip_y)
 {
     const uint16_t *pal = v->palette_rgb565[pal_no & 0x3F];
-    const uint8_t *sprite = &v->sprites_decoded[sprite_no * 256];
+    const uint8_t *sprite = &v->sprites_decoded[(sprite_no & 0x3F) * 256];
 
     for (int i = 0; i < 256; ++i) {
         int spr_x = i % 16;
@@ -115,6 +116,7 @@ void pac_video_render(pac_video_t *v,
                       const uint8_t *sprite_info,
                       uint16_t *tft_output_240x240)
 {
+    if (!v || !vram || !sprite_pos || !sprite_info || !tft_output_240x240) return;
     /* Clear native frame to black */
     memset(v->arcade_frame, 0, sizeof(v->arcade_frame));
 

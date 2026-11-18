@@ -32,9 +32,37 @@ static fm1_flash_hw_info_t g_flash_hw = {
 };
 
 #ifndef __GCC_PI32V2__
-/* Emulated hardware Flash buffer for unit testing or offline simulation */
+/* Emulated hardware Flash buffer (2 sectors: Slot A at 0x7D000, Slot B at 0x7E000) */
 static uint8_t s_mock_flash_mem[FM1_FLASH_SECTOR_SIZE * 2];
 static bool s_use_internal_mem = false;
+static int s_fault_read_after = -1;
+static int s_fault_write_after = -1;
+static int s_fault_erase_after = -1;
+
+void fm1_flash_hw_set_mock_faults(int read_fail_after, int write_fail_after, int erase_fail_after)
+{
+    s_fault_read_after = read_fail_after;
+    s_fault_write_after = write_fail_after;
+    s_fault_erase_after = erase_fail_after;
+}
+
+static bool mock_check_fault(int *counter)
+{
+    if (*counter < 0) return false;
+    if (*counter == 0) return true;
+    (*counter)--;
+    return false;
+}
+
+static int mock_map_range(uint32_t offset, size_t bytes, uint32_t *local_off)
+{
+    if (bytes > sizeof(s_mock_flash_mem)) return -1;
+    if (offset < FM1_NVRAM_OFFSET_DEFAULT) return -1;
+    uint32_t rel = offset - FM1_NVRAM_OFFSET_DEFAULT;
+    if (rel > sizeof(s_mock_flash_mem) - bytes) return -1;
+    *local_off = rel;
+    return 0;
+}
 #endif
 
 /* CRC-32 (IEEE 802.3 standard) lookup table */
@@ -56,6 +84,7 @@ static void init_crc32_table(void)
 
 uint32_t fm1_calc_crc32(const void *data, size_t length)
 {
+    if (!data && length > 0) return 0;
     init_crc32_table();
     const uint8_t *p = (const uint8_t *)data;
     uint32_t crc = 0xFFFFFFFFU;
@@ -117,9 +146,10 @@ int fm1_flash_hw_init(uint32_t detected_jedec_id)
     g_flash_hw.is_initialized = true;
 
 #ifndef __GCC_PI32V2__
-    /* Initialize internal memory buffer to 0xFF (erased state) */
+    /* Initialize internal memory buffer to 0xFF (erased state) and reset fault counters */
     memset(s_mock_flash_mem, 0xFF, sizeof(s_mock_flash_mem));
     s_use_internal_mem = true;
+    fm1_flash_hw_set_mock_faults(-1, -1, -1);
 #endif
 
     return 0;
@@ -144,7 +174,7 @@ int fm1_flash_hw_unprotect(void)
 int fm1_flash_hw_read(uint32_t offset, void *data, size_t bytes)
 {
     if (!data || bytes == 0) return -1;
-    if (offset + bytes > FM1_FLASH_TOTAL_BYTES) return -1;
+    if (bytes > FM1_FLASH_TOTAL_BYTES || offset > FM1_FLASH_TOTAL_BYTES - bytes) return -1;
 
 #ifdef __GCC_PI32V2__
     return fm1_flash_read(offset, data, bytes);
@@ -152,12 +182,10 @@ int fm1_flash_hw_read(uint32_t offset, void *data, size_t bytes)
     if (!s_use_internal_mem && fm1_flash_read) {
         return fm1_flash_read(offset, data, bytes);
     }
+    if (mock_check_fault(&s_fault_read_after)) return -1;
 
-    /* Use internal test buffer (offset mapped to sector range) */
-    uint32_t local_off = offset % sizeof(s_mock_flash_mem);
-    if (local_off + bytes > sizeof(s_mock_flash_mem)) {
-        bytes = sizeof(s_mock_flash_mem) - local_off;
-    }
+    uint32_t local_off = 0;
+    if (mock_map_range(offset, bytes, &local_off) != 0) return -1;
     memcpy(data, &s_mock_flash_mem[local_off], bytes);
     return 0;
 #endif
@@ -175,8 +203,10 @@ int fm1_flash_hw_erase_sector(uint32_t offset)
     if (!s_use_internal_mem && fm1_flash_erase) {
         return fm1_flash_erase(offset);
     }
+    if (mock_check_fault(&s_fault_erase_after)) return -1;
 
-    uint32_t local_off = offset % sizeof(s_mock_flash_mem);
+    uint32_t local_off = 0;
+    if (mock_map_range(offset, FM1_FLASH_SECTOR_SIZE, &local_off) != 0) return -1;
     memset(&s_mock_flash_mem[local_off], 0xFF, FM1_FLASH_SECTOR_SIZE);
     return 0;
 #endif
@@ -185,7 +215,7 @@ int fm1_flash_hw_erase_sector(uint32_t offset)
 int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
 {
     if (!data || bytes == 0) return -1;
-    if (offset + bytes > FM1_FLASH_TOTAL_BYTES) return -1;
+    if (bytes > FM1_FLASH_TOTAL_BYTES || offset > FM1_FLASH_TOTAL_BYTES - bytes) return -1;
     if (!g_flash_hw.status_register_unprotected) {
         fm1_flash_hw_unprotect();
     }
@@ -196,11 +226,10 @@ int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
     if (!s_use_internal_mem && fm1_flash_write) {
         return fm1_flash_write(offset, data, bytes);
     }
+    if (mock_check_fault(&s_fault_write_after)) return -1;
 
-    uint32_t local_off = offset % sizeof(s_mock_flash_mem);
-    if (local_off + bytes > sizeof(s_mock_flash_mem)) {
-        bytes = sizeof(s_mock_flash_mem) - local_off;
-    }
+    uint32_t local_off = 0;
+    if (mock_map_range(offset, bytes, &local_off) != 0) return -1;
 
     /* Flash memory can only flip 1 bits to 0 */
     const uint8_t *src = (const uint8_t *)data;
@@ -209,6 +238,70 @@ int fm1_flash_hw_write(uint32_t offset, const void *data, size_t bytes)
     }
     return 0;
 #endif
+}
+
+static uint32_t nvram_get_seq(const fm1_nvram_header_t *hdr)
+{
+    return (uint32_t)hdr->reserved[0] |
+           ((uint32_t)hdr->reserved[1] << 8) |
+           ((uint32_t)hdr->reserved[2] << 16) |
+           ((uint32_t)hdr->reserved[3] << 24);
+}
+
+static void nvram_set_seq(fm1_nvram_header_t *hdr, uint32_t seq)
+{
+    hdr->reserved[0] = (uint8_t)(seq & 0xFFU);
+    hdr->reserved[1] = (uint8_t)((seq >> 8) & 0xFFU);
+    hdr->reserved[2] = (uint8_t)((seq >> 16) & 0xFFU);
+    hdr->reserved[3] = (uint8_t)((seq >> 24) & 0xFFU);
+}
+
+/* Validate an NVRAM slot without overwriting caller's output buffer unless valid & fits.
+ * Returns 0 if valid, -2 read err, -3 bad magic/version, -4 bad/oversized payload_bytes,
+ * -5 payload read err, -6 CRC mismatch. */
+static int nvram_probe_slot(uint32_t slot_offset, void *scratch, size_t scratch_cap,
+                            fm1_nvram_header_t *out_hdr)
+{
+    fm1_nvram_header_t hdr;
+    if (fm1_flash_hw_read(slot_offset, &hdr, sizeof(hdr)) != 0) {
+        return -2;
+    }
+    if (hdr.magic != FM1_NVRAM_MAGIC || hdr.version != FM1_NVRAM_VERSION) {
+        return -3;
+    }
+    size_t max_slot_payload = FM1_FLASH_SECTOR_SIZE - sizeof(fm1_nvram_header_t);
+    if (hdr.payload_bytes == 0 || hdr.payload_bytes > max_slot_payload) {
+        return -4;
+    }
+    if (scratch && hdr.payload_bytes <= scratch_cap) {
+        if (fm1_flash_hw_read(slot_offset + (uint32_t)sizeof(hdr), scratch, hdr.payload_bytes) != 0) {
+            return -5;
+        }
+        if (fm1_calc_crc32(scratch, hdr.payload_bytes) != hdr.crc32) {
+            return -6;
+        }
+    } else if (!scratch) {
+        /* Verify CRC in fixed chunks when probing during save */
+        uint8_t chunk[256];
+        uint32_t crc = 0xFFFFFFFFU;
+        size_t remaining = hdr.payload_bytes;
+        uint32_t addr = slot_offset + (uint32_t)sizeof(hdr);
+        init_crc32_table();
+        while (remaining > 0) {
+            size_t n = remaining > sizeof(chunk) ? sizeof(chunk) : remaining;
+            if (fm1_flash_hw_read(addr, chunk, n) != 0) return -5;
+            for (size_t i = 0; i < n; i++) {
+                crc = s_crc32_table[(crc ^ chunk[i]) & 0xFFU] ^ (crc >> 8);
+            }
+            addr += (uint32_t)n;
+            remaining -= n;
+        }
+        if ((crc ^ 0xFFFFFFFFU) != hdr.crc32) {
+            return -6;
+        }
+    }
+    *out_hdr = hdr;
+    return 0;
 }
 
 int fm1_nvram_save(const void *data, size_t size)
@@ -220,29 +313,45 @@ int fm1_nvram_save(const void *data, size_t size)
         fm1_flash_hw_init(0);
     }
 
-    /* Prepare header */
+    /* Probe both A/B slots to find the active valid slot and highest sequence */
+    static const uint32_t slots[2] = { FM1_NVRAM_OFFSET_DEFAULT, FM1_NVRAM_OFFSET_BACKUP };
+    int active_idx = -1;
+    uint32_t best_seq = 0;
+    for (int i = 0; i < 2; i++) {
+        fm1_nvram_header_t probe_hdr;
+        if (nvram_probe_slot(slots[i], NULL, 0, &probe_hdr) == 0) {
+            uint32_t seq = nvram_get_seq(&probe_hdr);
+            if (active_idx < 0 || seq >= best_seq) {
+                active_idx = i;
+                best_seq = seq;
+            }
+        }
+    }
+
+    /* Write to the inactive slot so an interrupted erase/write preserves committed data */
+    uint32_t target_slot = (active_idx == 0) ? slots[1] : slots[0];
+
     fm1_nvram_header_t hdr;
     memset(&hdr, 0, sizeof(hdr));
     hdr.magic = FM1_NVRAM_MAGIC;
-    hdr.version = 1;
+    hdr.version = FM1_NVRAM_VERSION;
     hdr.jedec_id = g_flash_hw.jedec_id;
     hdr.payload_bytes = (uint32_t)size;
     hdr.crc32 = fm1_calc_crc32(data, size);
     hdr.hw_rev = (uint8_t)g_flash_hw.rev;
+    nvram_set_seq(&hdr, (active_idx >= 0) ? (best_seq + 1U) : 1U);
 
-    /* Erase persistent sector before write */
-    if (fm1_flash_hw_erase_sector(FM1_NVRAM_OFFSET_DEFAULT) != 0) {
+    if (fm1_flash_hw_erase_sector(target_slot) != 0) {
         return -2;
     }
 
-    /* Write header */
-    if (fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT, &hdr, sizeof(hdr)) != 0) {
-        return -3;
+    /* Write payload first, then header so an interrupted payload write leaves header erased */
+    if (fm1_flash_hw_write(target_slot + (uint32_t)sizeof(hdr), data, size) != 0) {
+        return -4;
     }
 
-    /* Write payload */
-    if (fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT + sizeof(hdr), data, size) != 0) {
-        return -4;
+    if (fm1_flash_hw_write(target_slot, &hdr, sizeof(hdr)) != 0) {
+        return -3;
     }
 
     return 0;
@@ -256,35 +365,43 @@ int fm1_nvram_load(void *buffer, size_t max_size, size_t *out_size)
         fm1_flash_hw_init(0);
     }
 
-    fm1_nvram_header_t hdr;
-    if (fm1_flash_hw_read(FM1_NVRAM_OFFSET_DEFAULT, &hdr, sizeof(hdr)) != 0) {
-        return -2;
+    static const uint32_t slots[2] = { FM1_NVRAM_OFFSET_DEFAULT, FM1_NVRAM_OFFSET_BACKUP };
+    int best_idx = -1;
+    uint32_t best_seq = 0;
+    fm1_nvram_header_t best_hdr;
+    int last_err = -3;
+
+    for (int i = 0; i < 2; i++) {
+        fm1_nvram_header_t hdr;
+        int rc = nvram_probe_slot(slots[i], NULL, 0, &hdr);
+        if (rc == 0) {
+            uint32_t seq = nvram_get_seq(&hdr);
+            if (best_idx < 0 || seq >= best_seq) {
+                best_idx = i;
+                best_seq = seq;
+                best_hdr = hdr;
+            }
+        } else if (last_err == -3 || rc < last_err) {
+            last_err = rc;
+        }
     }
 
-    /* Validate header magic */
-    if (hdr.magic != FM1_NVRAM_MAGIC) {
-        return -3; /* Uninitialized or corrupt */
+    if (best_idx < 0) {
+        return last_err;
     }
-
-    if (hdr.payload_bytes == 0 || hdr.payload_bytes > max_size) {
+    if (best_hdr.payload_bytes > max_size) {
         return -4;
     }
-
-    /* Read payload */
-    if (fm1_flash_hw_read(FM1_NVRAM_OFFSET_DEFAULT + sizeof(hdr), buffer, hdr.payload_bytes) != 0) {
+    if (fm1_flash_hw_read(slots[best_idx] + (uint32_t)sizeof(best_hdr), buffer, best_hdr.payload_bytes) != 0) {
         return -5;
     }
-
-    /* Verify CRC32 */
-    uint32_t calc = fm1_calc_crc32(buffer, hdr.payload_bytes);
-    if (calc != hdr.crc32) {
-        return -6; /* CRC mismatch */
+    if (fm1_calc_crc32(buffer, best_hdr.payload_bytes) != best_hdr.crc32) {
+        return -6;
     }
 
     if (out_size) {
-        *out_size = hdr.payload_bytes;
+        *out_size = best_hdr.payload_bytes;
     }
-
     return 0;
 }
 
@@ -293,5 +410,7 @@ int fm1_nvram_erase(void)
     if (!g_flash_hw.is_initialized) {
         fm1_flash_hw_init(0);
     }
-    return fm1_flash_hw_erase_sector(FM1_NVRAM_OFFSET_DEFAULT);
+    int r0 = fm1_flash_hw_erase_sector(FM1_NVRAM_OFFSET_DEFAULT);
+    int r1 = fm1_flash_hw_erase_sector(FM1_NVRAM_OFFSET_BACKUP);
+    return (r0 != 0) ? r0 : r1;
 }

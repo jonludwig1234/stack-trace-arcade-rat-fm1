@@ -54,7 +54,7 @@ void pac_synth_init(pac_synth_t *s)
 
 void pac_synth_key_event(pac_synth_t *s, wsg_chip_t *wsg, unsigned key_idx, bool pressed)
 {
-    if (key_idx >= 27) return;
+    if (!s || !wsg || key_idx >= 27) return;
     int midi_note = 48 + key_idx; /* C3 (48) to D5 (74) */
 
     if (pressed) {
@@ -73,7 +73,7 @@ void pac_synth_key_event(pac_synth_t *s, wsg_chip_t *wsg, unsigned key_idx, bool
         s->voices[chosen].env_level = 65535;
 
         /* Write to Namco hardware voice registers */
-        wsg->voices[chosen].waveform_no = s->current_waveform;
+        wsg->voices[chosen].waveform_no = s->current_waveform & 0x07U;
         wsg->voices[chosen].frequency = note_freqs[midi_note];
         wsg->voices[chosen].volume = s->master_volume;
     } else {
@@ -104,6 +104,7 @@ void pac_synth_tick(pac_synth_t *s, wsg_chip_t *wsg)
 #ifndef __GCC_PI32V2__
 void pac_synth_draw_ui(const pac_synth_t *s, const uint8_t *sound_rom, uint16_t *tft_output)
 {
+    if (!s || !sound_rom || !tft_output) return;
     /* Background dark navy */
     const uint16_t bg = 0x10A2;
     const uint16_t grid = 0x2124;
@@ -120,7 +121,7 @@ void pac_synth_draw_ui(const pac_synth_t *s, const uint8_t *sound_rom, uint16_t 
     }
 
     /* Draw active Namco waveform */
-    const uint8_t *wave = &sound_rom[s->current_waveform * 32];
+    const uint8_t *wave = &sound_rom[(s->current_waveform & 0x07U) * 32U];
     for (int x = 0; x < 240; ++x) {
         int step = (x * 32) / 240;
         int val = (wave[step] & 0x0F) - 8;

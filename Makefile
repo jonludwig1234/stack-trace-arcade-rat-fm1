@@ -12,15 +12,26 @@ all: package test
 	@echo "✅ Build complete: $(BUILD_DIR)/$(FWSC)"
 
 package:
-	@if [ -d fm1_open/sdk ] && command -v wine >/dev/null 2>&1; then \
-		if [ -f "$$HOME/.gemini/antigravity/scratch/jieli_pi32/bin/clang.exe" ] || [ -n "$$FM1_PI32_TOOLCHAIN" ]; then \
-			echo "Building AC791N PI32v2 firmware package via Wine SDK..."; \
-			python3 tools/build_firmware_package.py; \
-		else \
-			echo "Using precompiled $(FWSC) (PI32v2 compiler not configured)..."; \
-		fi; \
+	@if [ -d fm1_open/sdk ] && command -v wine >/dev/null 2>&1 && ( [ -f "$$HOME/.gemini/antigravity/scratch/jieli_pi32/bin/clang.exe" ] || [ -n "$$FM1_PI32_TOOLCHAIN" ] ); then \
+		echo "Building AC791N PI32v2 firmware package via Wine SDK..."; \
+		python3 tools/build_firmware_package.py; \
+	elif [ "$$FM1_REQUIRE_FRESH_BUILD" = "1" ]; then \
+		echo "ERROR: Fresh PI32v2 firmware build required (FM1_REQUIRE_FRESH_BUILD=1) but Wine/PI32v2 SDK is unavailable." >&2; \
+		exit 1; \
 	else \
-		echo "Using precompiled $(FWSC) (PI32v2 Wine SDK not present in this environment)..."; \
+		if [ ! -f "$(FWSC)" ] || [ ! -f firmware/SHA256SUMS.txt ]; then \
+			echo "ERROR: Prebuilt fallback $(FWSC) or firmware/SHA256SUMS.txt is missing." >&2; \
+			exit 1; \
+		fi; \
+		(cd firmware && sha256sum -c SHA256SUMS.txt >/dev/null) || { \
+			echo "ERROR: Prebuilt fallback $(FWSC) failed SHA256SUMS.txt verification (stale or corrupted)." >&2; \
+			exit 1; \
+		}; \
+		cmp -s "$(FWSC)" "firmware/$(FWSC)" || { \
+			echo "ERROR: Root $(FWSC) differs from firmware/$(FWSC)." >&2; \
+			exit 1; \
+		}; \
+		echo "[FALLBACK] Using verified precompiled $(FWSC) (PI32v2 Wine SDK unavailable; native C tests do not compile device .fwsc)."; \
 	fi
 
 test:

@@ -41,6 +41,11 @@ void fm1_screen_fill(unsigned x, unsigned y, unsigned w, unsigned h, uint16_t co
 /* External bridge functions */
 extern void fm1_pacman_init(void);
 extern void fm1_pacman_update_controls(void);
+extern void fm1_pacman_tick_frame(void);
+extern int  fm1_pacman_poll_toggle(uint32_t buttons);
+extern int  fm1_pacman_active(void);
+extern void fm1_pacman_audio_mix(int32_t *rendered);
+extern const pac_machine_t *fm1_pacman_get_machine(void);
 
 int main(void) {
     printf("=========================================================================\n");
@@ -83,12 +88,23 @@ int main(void) {
     printf("   ✓ Framebuffer active! Non-black pixels rendered: %d / %d\n", non_zero_pixels, FM1_SCREEN_SIZE * FM1_SCREEN_SIZE);
     assert(non_zero_pixels > 0);
 
-    /* 4. Verify Namco WSG Audio Synthesis DMA buffer */
-    printf("4. Verifying Namco 3-Voice WSG Audio DMA PCM generation...\n");
+    /* 4. Verify Namco WSG Audio Synthesis DMA buffer & bounds */
+    printf("4. Verifying Namco 3-Voice WSG Audio DMA PCM generation & bounds...\n");
     int32_t pcm_buffer[256];
     memset(pcm_buffer, 0, sizeof(pcm_buffer));
+    wsg_write(&machine.wsg, 0x05, 0xFF); /* Out-of-range waveform masked to 0..7 */
+    wsg_write(&machine.wsg, 0x11, 0x04);
+    wsg_write(&machine.wsg, 0x15, 0x0F);
     pac_core_audio(&machine, pcm_buffer, 128);
-    printf("   ✓ Audio DMA block synthesized 128 stereo PCM frames without clipping.\n");
+    int non_zero_audio = 0;
+    for (int i = 0; i < 256; i++) {
+        if (pcm_buffer[i] != 0) non_zero_audio++;
+        assert(pcm_buffer[i] > -1000000 && pcm_buffer[i] < 1000000);
+    }
+    assert(non_zero_audio > 0);
+    wsg_render_stereo(&machine.wsg, NULL, 128);
+    wsg_render_stereo(&machine.wsg, pcm_buffer, 0);
+    printf("   ✓ Audio DMA block synthesized %d non-zero PCM samples without clipping/OOB.\n", non_zero_audio);
 
     /* 5. Test God Mode Cheat Toggle */
     printf("5. Testing God Mode Invincibility Patching & Level Skip...\n");
@@ -119,19 +135,110 @@ int main(void) {
     assert(machine.mode == PAC_MODE_ARCADE);
     printf("   ✓ Machine mode cleanly toggled between Arcade and Namco Synth.\n");
 
-    /* 7. Test FM-1 Hardware Bridge (Silicone Keys & Buttons) */
+    /* 7. Test FM-1 Hardware Bridge (Silicone Keys, Buttons, Edges, Holds, Modes, Combos) */
     printf("7. Testing FM-1 Hardware Bridge & Controls...\n");
     memset(&mock_controls_state, 0, sizeof(mock_controls_state));
     fm1_pacman_init();
+    const pac_machine_t *bm = fm1_pacman_get_machine();
+    assert(bm != NULL);
+    assert(fm1_pacman_active() == 1);
 
-    /* Press Key 12 (Left) */
-    mock_controls_state.keys = (1U << 12);
+    /* 7a. Press & hold D-Pad keys (12=L, 14=U, 16=D, 17=R), then release */
+    mock_controls_state.keys = (1U << 12) | (1U << 14);
+    fm1_pacman_update_controls();
+    assert(bm->key_left == true && bm->key_up == true && bm->key_down == false && bm->key_right == false);
+    mock_controls_state.keys = (1U << 16) | (1U << 17);
+    fm1_pacman_update_controls();
+    assert(bm->key_left == false && bm->key_up == false && bm->key_down == true && bm->key_right == true);
+    mock_controls_state.keys = 0;
+    fm1_pacman_update_controls();
+    assert(bm->key_down == false && bm->key_right == false);
+
+    /* 7b. Stray non-D-Pad silicone keys in Arcade mode must NOT hijack WSG synth voices */
+    mock_controls_state.keys = (1U << 0) | (1U << 5);
+    fm1_pacman_update_controls();
+    assert(bm->synth.voices[0].active == false && bm->synth.voices[1].active == false);
+    mock_controls_state.keys = 0;
     fm1_pacman_update_controls();
 
-    /* Press Button 0 (Coin) and Button 1 (Start 1P) */
+    /* 7c. Coin & Start: rising edge latched across multiple control polls before frame tick, and held state */
     mock_controls_state.buttons = (1U << 0) | (1U << 1);
     fm1_pacman_update_controls();
-    printf("   ✓ FM-1 Hardware Bridge correctly mapped silicone keys & function buttons.\n");
+    assert(bm->key_coin == true && bm->key_start1 == true);
+    mock_controls_state.buttons = 0; /* rapid release before frame tick */
+    fm1_pacman_update_controls();
+    assert(bm->key_coin == true && bm->key_start1 == true); /* latched until frame consumes */
+    fm1_pacman_tick_frame();
+    fm1_pacman_update_controls();
+    assert(bm->key_coin == false && bm->key_start1 == false);
+
+    /* Rapid successive coin presses */
+    mock_controls_state.buttons = (1U << 0);
+    fm1_pacman_update_controls();
+    assert(bm->key_coin == true);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    fm1_pacman_update_controls();
+    assert(bm->key_coin == false);
+    mock_controls_state.buttons = (1U << 0);
+    fm1_pacman_update_controls();
+    assert(bm->key_coin == true);
+    mock_controls_state.buttons = 0;
+    fm1_pacman_tick_frame();
+
+    /* 7d. God Mode toggle via Button 2 (STOP) */
+    assert(bm->god_mode == false);
+    mock_controls_state.buttons = (1U << 2);
+    fm1_pacman_update_controls();
+    assert(bm->god_mode == true);
+    mock_controls_state.buttons = (1U << 2); /* hold does not re-toggle */
+    fm1_pacman_update_controls();
+    assert(bm->god_mode == true);
+    mock_controls_state.buttons = 0;
+    fm1_pacman_update_controls();
+    mock_controls_state.buttons = (1U << 2);
+    fm1_pacman_update_controls();
+    assert(bm->god_mode == false);
+    mock_controls_state.buttons = 0;
+    fm1_pacman_update_controls();
+
+    /* 7e. Mode toggle via Button 3 (MUTE) clears held Arcade D-Pad keys and enables Synth keys */
+    mock_controls_state.keys = (1U << 12); /* hold Left */
+    fm1_pacman_update_controls();
+    assert(bm->key_left == true);
+    mock_controls_state.buttons = (1U << 3);
+    fm1_pacman_update_controls();
+    assert(bm->mode == PAC_MODE_SYNTH);
+    assert(bm->key_left == false); /* cleared on mode change */
+    mock_controls_state.buttons = 0;
+    mock_controls_state.keys = (1U << 0); /* play C3 in Synth mode */
+    fm1_pacman_update_controls();
+    assert(bm->synth.voices[0].active == true && bm->wsg.voices[0].volume > 0);
+    mock_controls_state.keys = 0;
+    fm1_pacman_update_controls();
+    assert(bm->synth.voices[0].active == false && bm->wsg.voices[0].volume == 0);
+
+    /* Encoder 1 waveform wrap-around 0..7 */
+    mock_controls_state.encoders[1] = -1;
+    fm1_pacman_update_controls();
+    assert(bm->synth.current_waveform == 7);
+    mock_controls_state.encoders[1] = 1;
+    fm1_pacman_update_controls();
+    assert(bm->synth.current_waveform == 0);
+    mock_controls_state.encoders[1] = 0;
+
+    /* 7f. REC+MUTE (0x09) combo toggles active state and silences audio_mix */
+    assert(fm1_pacman_poll_toggle(0x09U) == 1);
+    assert(fm1_pacman_active() == 0);
+    memset(pcm_buffer, 0, sizeof(pcm_buffer));
+    fm1_pacman_audio_mix(pcm_buffer);
+    for (int i = 0; i < 256; i++) assert(pcm_buffer[i] == 0);
+    fm1_pacman_audio_mix(NULL); /* null safety */
+    assert(fm1_pacman_poll_toggle(0x09U) == 0); /* holding combo does not re-toggle */
+    assert(fm1_pacman_poll_toggle(0x00U) == 0);
+    assert(fm1_pacman_poll_toggle(0x09U) == 1);
+    assert(fm1_pacman_active() == 1);
+    printf("   ✓ FM-1 Hardware Bridge keys, edges, holds, modes, encoders & combos verified.\n");
 
     /* 8. Test Dual-Hardware Flash Identification & Driver Compatibility */
     printf("8. Testing Dual-Hardware Flash Identification (Old Rev 1 & New Rev 2)...\n");
@@ -199,6 +306,68 @@ int main(void) {
     load_res = fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size);
     assert(load_res != 0); /* Empty / erased flash correctly reports uninitialized */
     printf("   ✓ Sector erase and clean uninitialized state verified.\n");
+
+    /* 10. Flash Boundary & Fault-Injection Regression Tests */
+    printf("10. Testing Flash Boundaries, Fault Injection & Atomic Save Recovery...\n");
+    uint8_t small_buf[16];
+    assert(fm1_flash_hw_read(FM1_NVRAM_OFFSET_DEFAULT, NULL, 8) == -1);
+    assert(fm1_flash_hw_read(FM1_NVRAM_OFFSET_DEFAULT, small_buf, 0) == -1);
+    assert(fm1_flash_hw_read(FM1_NVRAM_OFFSET_DEFAULT, small_buf, (size_t)0xFFFFFFFFU) == -1);
+    assert(fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT, NULL, 8) == -1);
+    assert(fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT, small_buf, 0) == -1);
+    assert(fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT, small_buf, (size_t)0xFFFFFFFFU) == -1);
+    assert(fm1_flash_hw_erase_sector(FM1_NVRAM_OFFSET_DEFAULT + 1U) == -1); /* unaligned */
+    assert(fm1_flash_hw_erase_sector(FM1_FLASH_TOTAL_BYTES) == -1);         /* OOB */
+    assert(fm1_calc_crc32(NULL, 10) == 0);
+
+    /* Oversized NVRAM save rejected */
+    static uint8_t huge_payload[FM1_FLASH_SECTOR_SIZE];
+    memset(huge_payload, 0xA5, sizeof(huge_payload));
+    assert(fm1_nvram_save(huge_payload, sizeof(huge_payload)) == -1);
+
+    /* Commit baseline record, then inject erase/write/read faults */
+    const char *committed_v1 = "COMMITTED_V1_LEADERBOARD";
+    assert(fm1_nvram_save(committed_v1, strlen(committed_v1) + 1) == 0);
+
+    /* Fault 1: Erase failure preserves committed_v1 */
+    fm1_flash_hw_set_mock_faults(-1, -1, 0);
+    assert(fm1_nvram_save("ABORTED_ERASE", 14) == -2);
+    fm1_flash_hw_set_mock_faults(-1, -1, -1);
+    memset(readback_buf, 0, sizeof(readback_buf));
+    assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) == 0);
+    assert(strcmp(readback_buf, committed_v1) == 0);
+
+    /* Fault 2: Write failure mid-save preserves committed_v1 */
+    fm1_flash_hw_set_mock_faults(-1, 0, -1);
+    assert(fm1_nvram_save("ABORTED_WRITE", 14) == -4);
+    fm1_flash_hw_set_mock_faults(-1, -1, -1);
+    memset(readback_buf, 0, sizeof(readback_buf));
+    assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) == 0);
+    assert(strcmp(readback_buf, committed_v1) == 0);
+
+    /* Fault 3: Buffer too small for committed record returns -4 */
+    assert(fm1_nvram_load(small_buf, 4, &readback_size) == -4);
+
+    /* Fault 4: Read failure surfaces error */
+    fm1_flash_hw_set_mock_faults(0, -1, -1);
+    assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) < 0);
+    fm1_flash_hw_set_mock_faults(-1, -1, -1);
+
+    /* Fault 5: Corrupt payload in active slot -> CRC mismatch detected */
+    assert(fm1_nvram_erase() == 0);
+    assert(fm1_nvram_save("CRC_CHECK_DATA", 15) == 0);
+    uint8_t zero_byte = 0x00; /* 1->0 bit flip corrupts payload */
+    assert(fm1_flash_hw_write(FM1_NVRAM_OFFSET_DEFAULT + sizeof(fm1_nvram_header_t), &zero_byte, 1) == 0);
+    assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) == -6);
+
+    /* Video & Synth out-of-bounds / NULL safety */
+    pac_synth_t bad_synth;
+    pac_synth_init(&bad_synth);
+    bad_synth.current_waveform = 255;
+    pac_synth_draw_ui(&bad_synth, machine.wsg.sound_rom, machine.screen_buffer);
+    pac_synth_draw_ui(NULL, machine.wsg.sound_rom, machine.screen_buffer);
+    pac_video_render(NULL, machine.ram, machine.sprite_pos, machine.ram, machine.screen_buffer);
+    printf("   ✓ Flash boundaries, fault-injection, CRC mismatch & atomic recovery verified.\n");
 
     printf("\n=========================================================================\n");
     printf(">>> ALL NATIVE C FIRMWARE UNIT TESTS PASSED 100%%! <<<\n");

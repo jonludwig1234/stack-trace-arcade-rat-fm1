@@ -36,6 +36,8 @@ def is_ac791n_fwsc(fw_data):
 
 
 def patch_ac791n_fwsc(fw_data, rom_data, offset):
+    if offset < 0:
+        raise ValueError(f"Patch offset must be non-negative (got {offset})")
     markers = [fw_data[i * 48 + 47] for i in range(20)]
     ufw = bytearray(len(fw_data) - 20)
     for i in range(20):
@@ -45,16 +47,22 @@ def patch_ac791n_fwsc(fw_data, rom_data, offset):
     head = bytearray(ufw[:64])
     cipher_inplace(head, 0, 64, 65535)
     count = struct.unpack_from("<H", head, 8)[0]
+    if count < 1 or 64 + count * 80 > len(ufw):
+        raise ValueError(f"Invalid .fwsc record count: {count}")
 
     rec0 = bytearray(ufw[64:144])
     cipher_inplace(rec0, 0, 80, 65535)
     _rtype, _rid, _rcrc, _pad, roff, rsize, _rstored = struct.unpack_from("<HHHHIII", rec0, 0)
+    if roff + rsize > len(ufw) or AREA + 64 > rsize:
+        raise ValueError(f"Invalid flash record bounds: off=0x{roff:X}, size=0x{rsize:X}")
     flash = bytearray(ufw[roff : roff + rsize])
 
     rec_app = bytearray(flash[AREA + 32 : AREA + 64])
     cipher_inplace(rec_app, 0, 32, PUBLIC_CODE ^ (32 >> 2))
     app_addr, app_size = struct.unpack_from("<II", rec_app, 4)
     payload_size = app_addr + app_size + CFG_TOOL_SIZE
+    if AREA + payload_size + 64 > len(flash):
+        raise ValueError(f"Invalid app payload bounds: app_addr=0x{app_addr:X}, app_size=0x{app_size:X}")
 
     for p in range(0, payload_size + 64, 32):
         chunk = min(32, payload_size + 64 - p)
@@ -98,6 +106,9 @@ def patch_firmware(firmware_path, rom_path, hex_offset, output_path):
         offset = int(hex_offset, 16)
     except ValueError:
         print("Error: Target offset must be a valid hex string (e.g., 0x4120).")
+        sys.exit(1)
+    if offset < 0:
+        print(f"Error: Target offset must be non-negative (got {hex_offset}).")
         sys.exit(1)
 
     if not os.path.exists(firmware_path):

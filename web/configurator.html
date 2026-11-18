@@ -579,13 +579,17 @@
 
     <!-- Deploy -->
     <div class="card">
-      <div class="card-title">Deploy Firmware</div>
+      <div class="card-title">Deploy Firmware &amp; Profiles</div>
+      <div style="font-size:0.65rem; color:#8a91a4; line-height:1.45; margin-bottom:10px;">
+        <strong style="color:#aae4c8;">Precompiled .FWSC</strong> flashes the stock bare-metal Pac-Man + Namco WSG image.
+        To customize the 12-slot build from source, export <code>fm1_active_games.h</code> or <code>arcade_config.json</code>.
+      </div>
       <div class="action-block">
         <button class="btn-primary" id="btnExportBin">
-          💾 Export Custom .FWSC Binary
+          ⬇️ Download Stock .FWSC (Pac-Man + WSG)
         </button>
         <button class="btn-secondary" id="btnExportHeader">
-          📄 Generate C Source Header
+          📄 Generate C Source Header (fm1_active_games.h)
         </button>
         <button class="btn-secondary" id="btnSaveConfig">
           📋 Export arcade_config.json
@@ -745,8 +749,18 @@ dropZone.ondrop = (e) => {
 fileInput.onchange = () => {
   if (fileInput.files.length) handleRomFile(fileInput.files[0]);
 };
-function handleRomFile(file) {
-  showToast(`Imported ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Verified SHA256!`);
+async function handleRomFile(file) {
+  const dropSub = dropZone.querySelector('.drop-sub');
+  try {
+    const buf = await file.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (dropSub) dropSub.textContent = `${file.name} · SHA-256: ${hex.slice(0, 16)}…`;
+    showToast(`Hashed ${file.name} (${(file.size / 1024).toFixed(1)} KB) · SHA-256 ${hex.slice(0, 12)}…`);
+  } catch (err) {
+    if (dropSub) dropSub.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    showToast(`Loaded ${file.name} (${(file.size / 1024).toFixed(1)} KB) — ready for rom_patcher.py`);
+  }
 }
 
 function showToast(msg) {
@@ -786,6 +800,7 @@ document.getElementById('btnSaveConfig').onclick = () => {
   const config = {
     version: '1.0',
     slots: activeSlots,
+    climber: document.getElementById('mapClimber').value,
     dpad: document.getElementById('mapDpad').value,
     spinner: document.getElementById('mapSpinner').value,
     throttle: document.getElementById('mapThrottle').value,
