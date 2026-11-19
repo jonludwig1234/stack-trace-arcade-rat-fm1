@@ -35,7 +35,7 @@ def main():
 
     steps = [
         ("Native C Firmware GCC Compilation & Unit Execution Rig", 
-         "gcc -O2 -DFM1_ENABLE_BAND_RENDERER tools/test_native_c_firmware.c src/fm1_flash_hw.c src/fm1_pac_bridge.c src/pac_core.c src/pac_synth.c src/pac_video.c src/pac_wsg.c src/pac_demo_songs.c src/z80.c -I src/ -lm -o tools/test_native_c_firmware && tools/test_native_c_firmware"),
+         "gcc -O2 -DFM1_ENABLE_BAND_RENDERER tools/test_native_c_firmware.c src/fm1_flash_hw.c src/fm1_pac_bridge.c src/pac_core.c src/pac_ui.c src/pac_synth.c src/pac_video.c src/pac_wsg.c src/pac_demo_songs.c src/z80.c -I src/ -lm -o tools/test_native_c_firmware && tools/test_native_c_firmware"),
         ("Master Arcade Specification & ROM Execution Suite", 
          "node tools/test_all_games_arcade_spec.js"),
         ("Multi-Frame Quality Control & Ground Invariant Playthrough", 

@@ -22,7 +22,7 @@ jobs:
         make clean
         make all
         gcc -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra -DFM1_ENABLE_BAND_RENDERER -I. -Isrc \
-          tools/test_native_c_firmware.c src/z80.c src/pac_wsg.c src/pac_video.c src/pac_synth.c \
+          tools/test_native_c_firmware.c src/z80.c src/pac_wsg.c src/pac_video.c src/pac_ui.c src/pac_synth.c \
           src/pac_demo_songs.c src/pac_core.c src/fm1_pac_bridge.c src/fm1_flash_hw.c \
           -lm -o build/test_asan && ./build/test_asan
 

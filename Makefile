@@ -37,7 +37,7 @@ package:
 test:
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -DFM1_ENABLE_BAND_RENDERER tools/test_native_c_firmware.c \
-		src/z80.c src/pac_wsg.c src/pac_video.c src/pac_synth.c \
+		src/z80.c src/pac_wsg.c src/pac_video.c src/pac_ui.c src/pac_synth.c \
 		src/pac_demo_songs.c src/pac_core.c src/fm1_pac_bridge.c src/fm1_flash_hw.c \
 		-lm -o $(BUILD_DIR)/test_native_c_firmware
 	./$(BUILD_DIR)/test_native_c_firmware

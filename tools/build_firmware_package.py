@@ -60,6 +60,7 @@ ARCADE_SOURCES = [
     "src/fm1_flash_hw.c",
     "src/fm1_pac_bridge.c",
     "src/pac_core.c",
+    "src/pac_ui.c",
     "src/pac_synth.c",
     "src/pac_video.c",
     "src/pac_wsg.c",

@@ -398,34 +398,99 @@ int main(void) {
     mock_controls_state.buttons = 0;
     assert(ui_m->mode == PAC_MODE_SYNTH);
 
-    /* Verify voice 0 indicator bar (x=40..79, y=210..224) is idle gray (0x7BEF) */
-    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x7BEF);
+    /* Verify voice 0 indicator bar (x=26..77, y=172..183) is idle panel (0x10A2) */
+    assert(ui_m->screen_buffer[178 * 240 + 30] == 0x10A2);
 
     /* Hold key 0 -> voice 0 bar turns active green (0x07E0) */
     mock_controls_state.keys = (1U << 0);
     fm1_pacman_tick_frame();
-    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x07E0);
+    assert(ui_m->screen_buffer[178 * 240 + 30] == 0x07E0);
 
-    /* Snapshot waveform pixels, rotate Encoder 1 -> waveform pixels visually change */
-    uint16_t wave_snap[240];
-    for (int x = 0; x < 240; x++) wave_snap[x] = ui_m->screen_buffer[120 * 240 + x];
+    /* Snapshot waveform pixels (x=11..130, y=40..158), rotate Encoder 1 -> waveform visually changes */
+    uint16_t wave_snap[120];
+    for (int x = 0; x < 120; x++) wave_snap[x] = ui_m->screen_buffer[99 * 240 + (11 + x)];
     mock_controls_state.keys = 0;
     mock_controls_state.encoders[1] = 3; /* switch waveform 0 -> 3 */
     fm1_pacman_tick_frame();
+    mock_controls_state.encoders[1] = 0;
     assert(ui_m->synth.current_waveform == 3);
-    assert(ui_m->screen_buffer[9 * 240 + (16 + 3 * 26 + 5)] == 0x07FF); /* WSG 3 indicator lit */
-    assert(ui_m->screen_buffer[9 * 240 + (16 + 0 * 26 + 5)] == 0x2124); /* WSG 0 indicator dim */
-    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x7BEF); /* voice bar back to idle */
+    assert(ui_m->screen_buffer[26 * 240 + (16 + 3 * 26 + 4)] == 0x07FF); /* WSG 3 indicator lit */
+    assert(ui_m->screen_buffer[26 * 240 + (16 + 0 * 26 + 4)] == 0x2124); /* WSG 0 indicator dim */
+    assert(ui_m->screen_buffer[178 * 240 + 30] == 0x10A2); /* voice bar back to idle */
     int wave_diffs = 0;
-    for (int x = 0; x < 240; x++) {
-        for (int y = 60; y < 180; y++) {
-            if (ui_m->screen_buffer[y * 240 + x] == 0x07FF && y == 120 && wave_snap[x] != 0x07FF) {
-                wave_diffs++;
-            }
+    for (int x = 0; x < 120; x++) {
+        if (ui_m->screen_buffer[99 * 240 + (11 + x)] != wave_snap[x]) {
+            wave_diffs++;
         }
     }
     assert(wave_diffs > 0);
-    printf("   ✓ On-device Arcade bezel, Synth oscilloscope waveform & voice indicator UI verified.\n");
+
+    /* 11c. Cycle to Edit Page 1/2 (Btn 0 = REC), test cursor & parameter clamping */
+    mock_controls_state.buttons = (1U << 0);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->synth.ui_page == UI_PAGE_EDIT);
+    assert(ui_m->synth.edit_cursor == 0);
+    mock_controls_state.encoders[3] = 1; /* move cursor to VOL (1) */
+    mock_controls_state.encoders[2] = 50; /* clamp VOL max = 15 */
+    fm1_pacman_tick_frame();
+    mock_controls_state.encoders[3] = 0;
+    assert(ui_m->synth.edit_cursor == 1);
+    assert(ui_m->synth.master_volume == 15);
+    mock_controls_state.encoders[2] = -50; /* clamp VOL min = 0 */
+    fm1_pacman_tick_frame();
+    assert(ui_m->synth.master_volume == 0);
+    mock_controls_state.encoders[2] = 12; /* restore VOL = 12 */
+    fm1_pacman_tick_frame();
+    mock_controls_state.encoders[2] = 0;
+    assert(ui_m->synth.master_volume == 12);
+
+    /* 11d. Cycle to System Page 2/2 (Btn 0 = REC), test Save + Confirm Modal protection */
+    mock_controls_state.buttons = (1U << 0);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->synth.ui_page == UI_PAGE_SYSTEM);
+
+    /* Save via Btn 1 (PLAY), verify toast + NVRAM readable */
+    mock_controls_state.buttons = (1U << 1);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->synth.toast_frames > 0);
+    assert(strcmp(ui_m->synth.toast_msg, "NVRAM SAVED") == 0);
+
+    /* Open Confirm Modal via Btn 2 (STOP), release, cancel via Btn 2 (STOP) -> NVRAM intact */
+    mock_controls_state.buttons = (1U << 2);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    fm1_pacman_tick_frame();
+    assert(ui_m->synth.ui_page == UI_PAGE_CONFIRM);
+    mock_controls_state.buttons = (1U << 2);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    fm1_pacman_tick_frame();
+    assert(ui_m->synth.ui_page == UI_PAGE_SYSTEM);
+    uint8_t saved_patch[4];
+    size_t saved_len = 0;
+    assert(fm1_nvram_load(saved_patch, sizeof(saved_patch), &saved_len) == 0);
+    assert(saved_len == 4 && saved_patch[0] == 3);
+
+    /* Re-open Confirm Modal, confirm erase via Btn 1 (PLAY) -> returns Home & clears NVRAM */
+    mock_controls_state.buttons = (1U << 2);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    mock_controls_state.buttons = (1U << 1);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->synth.ui_page == UI_PAGE_HOME);
+    assert(fm1_nvram_load(saved_patch, sizeof(saved_patch), &saved_len) != 0);
+
+    /* 11e. Return to Arcade mode (Btn 3 = MUTE) and verify Arcade toast overlay */
+    mock_controls_state.buttons = (1U << 3);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->mode == PAC_MODE_ARCADE);
+    assert(ui_m->synth.toast_frames > 0);
+    printf("   ✓ On-device 2-level UI, clamping, confirm protection, toast & Synth UI verified.\n");
 
     /* 12. Host-vs-Device Band Renderer Pixel Parity */
 #ifdef FM1_ENABLE_BAND_RENDERER

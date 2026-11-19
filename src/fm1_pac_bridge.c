@@ -96,21 +96,73 @@ static void update_controls_from(const struct fm1_controls *ctrl)
 {
     if (!ctrl) return;
 
-    /* 1. Function Buttons (evaluated first so mode toggles apply immediately):
-     * Button 0 (REC): Insert Coin (COIN 1)
-     * Button 1 (PLAY): 1-Player Start
-     * Button 2 (STOP): Toggle God Mode (Invincibility)
-     * Button 3 (MUTE): Toggle Mode (Arcade <-> Namco Synth)
+    /* 1. Function Buttons (evaluated first so mode/page toggles apply immediately):
+     * Arcade Home:  Btn 0 (REC)=Coin, Btn 1 (PLAY)=Start 1P, Btn 2 (STOP)=God Mode, Btn 3 (MUTE)=Synth
+     * Synth Pages:  Btn 0 (REC)=Cycle Page (Home->1/2->2/2->Home), Btn 2 (STOP)=Home / Confirm Clear
+     * Confirm Modal: Btn 1 (PLAY)=Confirm NVRAM Erase, Btn 2/0/3=Cancel
      */
     uint32_t btn_pressed = ctrl->buttons & ~prev_buttons;
     if ((ctrl->buttons & 0x09U) != 0x09U) {
-        if (btn_pressed & (1U << 0)) pending_coin = true;
-        if (btn_pressed & (1U << 1)) pending_start1 = true;
-        if (btn_pressed & (1U << 2)) pac_core_toggle_cheat(&g_pac);
-        if (btn_pressed & (1U << 3)) pac_core_toggle_mode(&g_pac);
+        if (g_pac.mode == PAC_MODE_ARCADE) {
+            if (btn_pressed & (1U << 0)) {
+                pending_coin = true;
+                pac_synth_set_toast(&g_pac.synth, "COIN +1", UI_COL_AMBER);
+            }
+            if (btn_pressed & (1U << 1)) {
+                pending_start1 = true;
+            }
+            if (btn_pressed & (1U << 2)) {
+                pac_core_toggle_cheat(&g_pac);
+                pac_synth_set_toast(&g_pac.synth,
+                                    g_pac.god_mode ? "GOD MODE ON" : "GOD MODE OFF",
+                                    g_pac.god_mode ? UI_COL_NEON : UI_COL_AMBER);
+            }
+            if (btn_pressed & (1U << 3)) {
+                pac_core_toggle_mode(&g_pac);
+                g_pac.synth.ui_page = UI_PAGE_HOME;
+                pac_synth_set_toast(&g_pac.synth, "SYNTH MODE", UI_COL_ACCENT);
+            }
+        } else {
+            if (btn_pressed & (1U << 3)) {
+                pac_core_toggle_mode(&g_pac);
+                pac_synth_set_toast(&g_pac.synth, "ARCADE MODE", UI_COL_ACCENT);
+            } else if (g_pac.synth.ui_page == UI_PAGE_CONFIRM) {
+                if (btn_pressed & (1U << 1)) {
+                    fm1_nvram_erase();
+                    g_pac.synth.ui_page = UI_PAGE_HOME;
+                    pac_synth_set_toast(&g_pac.synth, "NVRAM CLEARED", UI_COL_DANGER);
+                } else if (btn_pressed & ((1U << 0) | (1U << 2))) {
+                    g_pac.synth.ui_page = UI_PAGE_SYSTEM;
+                    pac_synth_set_toast(&g_pac.synth, "CANCELLED", UI_COL_MUTED);
+                }
+            } else {
+                if (btn_pressed & (1U << 0)) {
+                    g_pac.synth.ui_page = (ui_page_t)((g_pac.synth.ui_page + 1) % 3);
+                }
+                if (btn_pressed & (1U << 1)) {
+                    if (g_pac.synth.ui_page == UI_PAGE_SYSTEM) {
+                        int rc = fm1_nvram_save(&g_pac.synth.current_waveform, 4);
+                        pac_synth_set_toast(&g_pac.synth, rc == 0 ? "NVRAM SAVED" : "SAVE ERROR",
+                                            rc == 0 ? UI_COL_NEON : UI_COL_DANGER);
+                    }
+                }
+                if (btn_pressed & (1U << 2)) {
+                    if (g_pac.synth.ui_page == UI_PAGE_SYSTEM) {
+                        g_pac.synth.ui_page = UI_PAGE_CONFIRM;
+                    } else {
+                        g_pac.synth.ui_page = UI_PAGE_HOME;
+                    }
+                }
+            }
+        }
     }
-    g_pac.key_coin = pending_coin || ((ctrl->buttons & (1U << 0)) != 0);
-    g_pac.key_start1 = pending_start1 || ((ctrl->buttons & (1U << 1)) != 0);
+    if (g_pac.mode == PAC_MODE_ARCADE) {
+        g_pac.key_coin = pending_coin || ((ctrl->buttons & (1U << 0)) != 0);
+        g_pac.key_start1 = pending_start1 || ((ctrl->buttons & (1U << 1)) != 0);
+    } else {
+        g_pac.key_coin = false;
+        g_pac.key_start1 = false;
+    }
 
     prev_buttons = ctrl->buttons;
 
@@ -133,14 +185,35 @@ static void update_controls_from(const struct fm1_controls *ctrl)
         g_pac.key_right = false;
     }
 
-    /* 3. Rotary Encoders:
-     * Knob 0: Master volume
+    /* 3. Rotary Encoders & Battery Telemetry:
      * Knob 1: Synth Waveform Selector (0..7)
+     * Knob 2: Decay (Home) or Selected Edit Param (Edit 1/2)
+     * Knob 3: Master Volume (Home) or Edit Cursor (Edit 1/2)
      */
+    if (ctrl->battery > 0 && ctrl->battery <= 100) {
+        g_pac.synth.battery_pct = (uint8_t)ctrl->battery;
+    }
     if (ctrl->encoders[1] != 0) {
-        int w = ((int)g_pac.synth.current_waveform + ctrl->encoders[1]) % 8;
-        if (w < 0) w += 8;
-        g_pac.synth.current_waveform = (uint8_t)w;
+        pac_synth_adjust_param(&g_pac.synth, 0, ctrl->encoders[1]);
+    }
+    if (g_pac.mode == PAC_MODE_SYNTH) {
+        if (g_pac.synth.ui_page == UI_PAGE_EDIT) {
+            if (ctrl->encoders[3] != 0) {
+                int c = ((int)g_pac.synth.edit_cursor + ctrl->encoders[3]) % 4;
+                if (c < 0) c += 4;
+                g_pac.synth.edit_cursor = (uint8_t)c;
+            }
+            if (ctrl->encoders[2] != 0) {
+                pac_synth_adjust_param(&g_pac.synth, g_pac.synth.edit_cursor, ctrl->encoders[2]);
+            }
+        } else {
+            if (ctrl->encoders[2] != 0) {
+                pac_synth_adjust_param(&g_pac.synth, 2, ctrl->encoders[2]);
+            }
+            if (ctrl->encoders[3] != 0) {
+                pac_synth_adjust_param(&g_pac.synth, 1, ctrl->encoders[3]);
+            }
+        }
     }
 
     /* 4. Silicone Performance Keys in Synth Mode:

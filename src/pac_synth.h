@@ -6,6 +6,7 @@
 
 #include "pac_wsg.h"
 #include "pac_video.h"
+#include "pac_ui.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -15,6 +16,12 @@ typedef struct {
     uint8_t master_volume;    /* 0..15 */
     uint16_t attack_rate;
     uint16_t decay_rate;
+    ui_page_t ui_page;        /* Active Synth UI screen */
+    uint8_t edit_cursor;      /* 0..3 selected param on Edit page */
+    uint8_t battery_pct;      /* 0..100 display battery level */
+    uint8_t toast_frames;     /* Remaining 60Hz frames for toast overlay */
+    uint16_t toast_color;
+    char toast_msg[28];
     struct {
         int note;             /* Active MIDI note or -1 */
         uint16_t env_level;   /* 0..65535 */
@@ -23,6 +30,8 @@ typedef struct {
 } pac_synth_t;
 
 void pac_synth_init(pac_synth_t *s);
+void pac_synth_set_toast(pac_synth_t *s, const char *msg, uint16_t color);
+void pac_synth_adjust_param(pac_synth_t *s, int cursor, int delta);
 void pac_synth_key_event(pac_synth_t *s, wsg_chip_t *wsg, unsigned key_idx, bool pressed);
 void pac_synth_tick(pac_synth_t *s, wsg_chip_t *wsg);
 #ifndef __GCC_PI32V2__

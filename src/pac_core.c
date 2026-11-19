@@ -155,11 +155,18 @@ void pac_core_frame(pac_machine_t *m)
     }
 
     /* Trigger VBLANK interrupt & render video */
+    if (m->synth.toast_frames > 0) {
+        m->synth.toast_frames--;
+    }
     if (m->vblank_enabled) {
         z80_gen_int(&m->cpu, m->int_vector);
 #ifndef __GCC_PI32V2__
         pac_video_render(&m->video, m->ram, m->sprite_pos,
                          &m->ram[0x0FF0], m->screen_buffer);
+        if (m->synth.toast_frames > 0) {
+            ui_band_ctx_t tctx = { .band = m->screen_buffer, .y0 = 0, .h = FM1_SCREEN_SIZE };
+            ui_draw_toast(&tctx, m->synth.toast_msg, m->synth.toast_color ? m->synth.toast_color : UI_COL_ACCENT);
+        }
 #endif
     }
 
