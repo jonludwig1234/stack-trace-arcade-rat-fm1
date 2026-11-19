@@ -15,12 +15,34 @@ jobs:
     - name: Setup Build & Verification Toolchain
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc make python3
+        sudo apt-get install -y gcc make python3 nodejs
 
-    - name: Build & Verify Firmware
+    - name: Build & Verify Firmware (Host Tests + ASan/UBSan + Python Suite)
       run: |
         make clean
         make all
+        gcc -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra -DFM1_ENABLE_BAND_RENDERER -I. -Isrc \
+          tools/test_native_c_firmware.c src/z80.c src/pac_wsg.c src/pac_video.c src/pac_synth.c \
+          src/pac_demo_songs.c src/pac_core.c src/fm1_pac_bridge.c src/fm1_flash_hw.c \
+          -lm -o build/test_asan && ./build/test_asan
+
+    - name: Run Gameplay & Node VM Suites
+      run: |
+        for t in \
+          tools/test_all_games_arcade_spec.js \
+          tools/test_quality_control_all_games.js \
+          tools/test_all_games_mortal_and_gameover.js \
+          tools/test_stage_progression_all_games.js \
+          tools/test_all_games_input_dispatch.js \
+          tools/test_all_games_gameplay_audit.js \
+          tools/test_donkey_kong_authentic.js \
+          tools/test_gyruss_mortal_mechanics.js \
+          tools/test_frogger_death_fidelity.js \
+          tools/test_pacman_z80_bus.js \
+          tools/test_immortal_and_level_skip.js \
+          tools/test_real_user_journeys_and_acoustics.js; do
+          node "$t"
+        done
 
     - name: Upload .fwsc Artifact
       uses: actions/upload-artifact@v4

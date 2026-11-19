@@ -171,7 +171,9 @@ void pac_video_render(pac_video_t *v,
     }
 }
 
-#else /* __GCC_PI32V2__ */
+#endif /* !__GCC_PI32V2__ */
+
+#if defined(__GCC_PI32V2__) || defined(FM1_ENABLE_BAND_RENDERER)
 
 static uint16_t s_band_native[20 * PAC_NATIVE_WIDTH];
 static uint16_t s_band_out[16 * FM1_SCREEN_SIZE];
@@ -284,4 +286,4 @@ void pac_video_render_bands(pac_video_t *v,
     }
 }
 
-#endif /* __GCC_PI32V2__ */
+#endif /* __GCC_PI32V2__ || FM1_ENABLE_BAND_RENDERER */

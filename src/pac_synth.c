@@ -143,7 +143,8 @@ void pac_synth_draw_ui(const pac_synth_t *s, const uint8_t *sound_rom, uint16_t 
         }
     }
 }
-#else
+#endif
+#if defined(__GCC_PI32V2__) || defined(FM1_ENABLE_BAND_RENDERER)
 static uint16_t s_synth_band[16 * 240];
 
 void pac_synth_draw_ui_bands(const pac_synth_t *s, const uint8_t *sound_rom, pac_band_blit_fn blit_fn)
@@ -194,4 +195,4 @@ void pac_synth_draw_ui_bands(const pac_synth_t *s, const uint8_t *sound_rom, pac
         }
     }
 }
-#endif
+#endif /* __GCC_PI32V2__ || FM1_ENABLE_BAND_RENDERER */

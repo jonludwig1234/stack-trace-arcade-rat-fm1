@@ -27,7 +27,8 @@ void pac_synth_key_event(pac_synth_t *s, wsg_chip_t *wsg, unsigned key_idx, bool
 void pac_synth_tick(pac_synth_t *s, wsg_chip_t *wsg);
 #ifndef __GCC_PI32V2__
 void pac_synth_draw_ui(const pac_synth_t *s, const uint8_t *sound_rom, uint16_t *tft_output);
-#else
+#endif
+#if defined(__GCC_PI32V2__) || defined(FM1_ENABLE_BAND_RENDERER)
 void pac_synth_draw_ui_bands(const pac_synth_t *s, const uint8_t *sound_rom, pac_band_blit_fn blit_fn);
 #endif
 

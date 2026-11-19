@@ -38,6 +38,17 @@ void fm1_screen_fill(unsigned x, unsigned y, unsigned w, unsigned h, uint16_t co
     (void)x; (void)y; (void)w; (void)h; (void)color;
 }
 
+/* Mock band blitter for Host-vs-Device Band Renderer parity check */
+static uint16_t band_assemble_buf[FM1_SCREEN_SIZE * FM1_SCREEN_SIZE];
+static int mock_band_blit(unsigned x, unsigned y, unsigned w, unsigned h,
+                          const uint16_t *pixels, size_t count) {
+    assert(x == 0 && w == FM1_SCREEN_SIZE);
+    assert(y + h <= FM1_SCREEN_SIZE);
+    assert(count == (size_t)w * h);
+    memcpy(&band_assemble_buf[y * FM1_SCREEN_SIZE], pixels, count * sizeof(uint16_t));
+    return 0;
+}
+
 /* External bridge functions */
 extern void fm1_pacman_init(void);
 extern void fm1_pacman_update_controls(void);
@@ -413,6 +424,60 @@ int main(void) {
     }
     assert(wave_diffs > 0);
     printf("   ✓ On-device Arcade bezel, Synth oscilloscope waveform & voice indicator UI verified.\n");
+
+    /* 12. Host-vs-Device Band Renderer Pixel Parity */
+    printf("12. Testing Host-vs-Device Band Renderer Pixel Parity...\n");
+    pac_video_render(&machine.video, machine.ram, machine.sprite_pos,
+                     &machine.ram[0x0FF0], machine.screen_buffer);
+    memset(band_assemble_buf, 0, sizeof(band_assemble_buf));
+    pac_video_render_bands(&machine.video, machine.ram, machine.sprite_pos,
+                           &machine.ram[0x0FF0], mock_band_blit);
+    assert(memcmp(machine.screen_buffer, band_assemble_buf, sizeof(band_assemble_buf)) == 0);
+
+    uint16_t synth_full[FM1_SCREEN_SIZE * FM1_SCREEN_SIZE];
+    memset(synth_full, 0, sizeof(synth_full));
+    memset(band_assemble_buf, 0, sizeof(band_assemble_buf));
+    pac_synth_draw_ui(&ui_m->synth, ui_m->wsg.sound_rom, synth_full);
+    pac_synth_draw_ui_bands(&ui_m->synth, ui_m->wsg.sound_rom, mock_band_blit);
+    assert(memcmp(synth_full, band_assemble_buf, sizeof(band_assemble_buf)) == 0);
+    printf("   ✓ Band renderers (Arcade & Synth UI) match full-frame renderers 100%% pixel-for-pixel.\n");
+
+    /* 13. NVRAM Dual-Slot Fallback, 50-Cycle Ping-Pong & Deterministic Fuzz */
+    printf("13. Testing NVRAM Dual-Slot Corruption Fallback & PRNG Fuzz...\n");
+    assert(fm1_nvram_erase() == 0);
+    assert(fm1_nvram_save("SLOT_A_VALID", 13) == 0);
+    assert(fm1_nvram_save("SLOT_B_NEWER", 13) == 0);
+    /* Corrupt Slot B payload -> fm1_nvram_load must fall back to Slot A */
+    uint8_t corrupt_b = 0x00;
+    assert(fm1_flash_hw_write(FM1_NVRAM_OFFSET_BACKUP + sizeof(fm1_nvram_header_t), &corrupt_b, 1) == 0);
+    memset(readback_buf, 0, sizeof(readback_buf));
+    assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) == 0);
+    assert(strcmp(readback_buf, "SLOT_A_VALID") == 0);
+
+    /* 50-cycle alternating A/B save/load stress */
+    for (int cyc = 0; cyc < 50; cyc++) {
+        char msg[48];
+        snprintf(msg, sizeof(msg), "CYCLE_%03d_CRC_OK", cyc);
+        assert(fm1_nvram_save(msg, strlen(msg) + 1) == 0);
+        memset(readback_buf, 0, sizeof(readback_buf));
+        assert(fm1_nvram_load(readback_buf, sizeof(readback_buf), &readback_size) == 0);
+        assert(strcmp(readback_buf, msg) == 0);
+    }
+
+    /* Deterministic PRNG fuzz on wsg_write & wsg_render_stereo (500 iterations) */
+    uint32_t rng = 0xCAFEBABEU;
+    wsg_chip_t fuzz_wsg;
+    wsg_init(&fuzz_wsg, machine.wsg.sound_rom);
+    for (int it = 0; it < 500; it++) {
+        rng = rng * 1664525U + 1013904223U;
+        wsg_write(&fuzz_wsg, (uint8_t)(rng & 0xFFU), (uint8_t)((rng >> 8) & 0xFFU));
+        if ((it % 10) == 0) {
+            int32_t fbuf[64];
+            memset(fbuf, 0, sizeof(fbuf));
+            wsg_render_stereo(&fuzz_wsg, fbuf, 32);
+        }
+    }
+    printf("   ✓ Dual-slot fallback, 50-cycle ping-pong & 500-iter WSG fuzz passed.\n");
 
     printf("\n=========================================================================\n");
     printf(">>> ALL NATIVE C FIRMWARE UNIT TESTS PASSED 100%%! <<<\n");

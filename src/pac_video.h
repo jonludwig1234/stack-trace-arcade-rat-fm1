@@ -36,7 +36,8 @@ void pac_video_render(pac_video_t *v,
                       const uint8_t *sprite_pos,
                       const uint8_t *sprite_info,
                       uint16_t *tft_output_240x240);
-#else
+#endif
+#if defined(__GCC_PI32V2__) || defined(FM1_ENABLE_BAND_RENDERER)
 void pac_video_render_bands(pac_video_t *v,
                             const uint8_t *vram,
                             const uint8_t *sprite_pos,
