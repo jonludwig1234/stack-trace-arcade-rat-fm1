@@ -25034,18 +25034,20 @@ function updateAudioPill() {
   pill.style.color = armed ? '#00ff66' : '#9bb0ba';
 }
 window.addEventListener('pointerdown', () => setTimeout(updateAudioPill, 60), { passive: true });
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('div[onclick], span[onclick]').forEach((el) => {
-    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
-    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
-    el.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        el.click();
-      }
+if (typeof document.addEventListener === 'function') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('div[onclick], span[onclick]').forEach((el) => {
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          el.click();
+        }
+      });
     });
   });
-});
+}
 
 window.addEventListener('keydown', (e) => {
   if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
