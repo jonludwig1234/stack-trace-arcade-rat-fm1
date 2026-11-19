@@ -18,14 +18,14 @@
     --red-alert: #ff4757;
     --purple-synth: #a55eea;
     --muted: #859293;
-    --bg-page: #101416;
+    --bg-page: #0b0f14;
     --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     --font-mono: Consolas, "Liberation Mono", Menlo, Courier, monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
-    background: radial-gradient(ellipse at 50% 20%, #202629 0%, var(--bg-page) 100%);
+    background: radial-gradient(ellipse at 50% 10%, #141c24 0%, var(--bg-page) 70%);
     color: #e2e7e9;
     font-family: var(--font-ui);
     display: flex;
@@ -1393,6 +1393,39 @@
     <button class="splash-trigger-btn" id="btnReplaySplash" onclick="triggerSplashScreen()" title="View Arcade Rat Firmware Boot Splash">⚡ SPLASH</button>
     <a href="../arcade_rat_fm1.fwsc" download="arcade_rat_fm1.fwsc" class="config-btn" style="border-color:#00ff66;color:#00ff66;" title="Download Precompiled M-VAVE FM-1 Firmware (.fwsc, 479,796 B)">⬇️ .FWSC</a>
     <a href="configurator.html" class="config-btn">⚙️ CONFIG (93)</a>
+    <button class="splash-trigger-btn" id="audioStatusPill" onclick="if(typeof initAudio==='function')initAudio();updateAudioPill();" title="Click to Arm WebAudio" style="border-color:#354656; color:#9bb0ba;">🔇 AUDIO</button>
+    <button class="splash-trigger-btn" id="btnShortcutsHelp" onclick="toggleShortcutsModal(true)" title="Keyboard Shortcuts &amp; Quick Start (?)">❓ HELP</button>
+  </div>
+</div>
+
+<!-- Keyboard Shortcuts & Quick-Start Modal -->
+<div id="shortcutsModal" onclick="if(event.target===this)toggleShortcutsModal(false)" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(5,8,12,0.82); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:18px;">
+  <div style="max-width:640px; width:100%; background:#121720; border:1px solid #00e5ff; border-radius:12px; padding:20px 22px; box-shadow:0 20px 50px rgba(0,0,0,0.85); color:#e6eef2; font-family:var(--font-mono);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #24303c; padding-bottom:8px;">
+      <strong style="color:#00e5ff; font-size:0.9rem; letter-spacing:1px;">⌨️ ARCADE RAT · KEYBOARD SHORTCUTS &amp; QUICK START</strong>
+      <button onclick="toggleShortcutsModal(false)" style="background:#1c2530; border:1px solid #354656; color:#e6eef2; border-radius:6px; padding:3px 9px; cursor:pointer; font-weight:800;">ESC ✕</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; font-size:0.72rem; line-height:1.6;">
+      <div>
+        <div style="color:#f5a623; font-weight:800; margin-bottom:4px;">🕹️ ARCADE CONTROLS</div>
+        <div><b>WASD / Arrows</b>: Move / Steer</div>
+        <div><b>Space / Enter</b>: Fire / Action / Quick Play</div>
+        <div><b>1 / C</b>: Insert Coin · <b>5 / P</b>: Start 1P</div>
+        <div><b>R / Backspace</b>: Hold to Rewind Time</div>
+        <div><b>I / G</b>: Immortal God Mode · <b>L</b>: Skip Level</div>
+      </div>
+      <div>
+        <div style="color:#00ff66; font-weight:800; margin-bottom:4px;">🎹 SYNTH, TRACKER &amp; CRT</div>
+        <div><b>A–K / W–U</b>: Play 27-Key Synth &amp; SFX</div>
+        <div><b>Left / Right</b> (Synth): Octave Down / Up</div>
+        <div><b>1–8</b> (Speech Tab): Trigger Speech ROM</div>
+        <div><b>Tab</b>: Cycle Modes · <b>K</b>: Scanlines · <b>Z</b>: 2× Zoom</div>
+        <div><b>B</b>: RAM Glitch Bender · <b>T</b>: Attract Tour</div>
+      </div>
+    </div>
+    <div style="margin-top:12px; padding-top:10px; border-top:1px solid #24303c; font-size:0.68rem; color:#9bb0ba;">
+      <strong>FM-1 Hardware Note:</strong> The precompiled <code>arcade_rat_fm1.fwsc</code> boots Pac-Man + Namco WSG. Press <b>REC + MUTE</b> on the FM-1 panel to toggle back to Groovebox Synth.
+    </div>
   </div>
 </div>
 
@@ -1809,13 +1842,14 @@
 </div>
 
 <!-- Secondary Navigation & Mode Indicators -->
-<div class="nav-strip" style="margin-bottom: 8px;">
-  <div class="mode-indicator" style="width: 100%; justify-content: center;">
+<div class="nav-strip" style="margin-bottom: 6px; opacity: 0.88;">
+  <div class="mode-indicator" style="width: 100%; justify-content: center; gap: 4px;">
     <div class="mode-tag active" data-mode="arcade">ARCADE</div>
     <div class="mode-tag" data-mode="synth">SYNTH STUDIO</div>
     <div class="mode-tag" data-mode="tracker">TRACKER</div>
     <div class="mode-tag" data-mode="demo">DEMO SONGS</div>
     <div class="mode-tag" data-mode="soundboard">SFX PADS (27)</div>
+    <div class="mode-tag" data-mode="speech" onclick="setStudioTab('speech')">SPEECH ROM</div>
     <div class="mode-tag" data-mode="tour">TOUR DEMO</div>
     <div class="mode-tag" data-mode="rewind">REWIND</div>
     <div class="mode-tag" data-mode="vector">LISSAJOUS</div>
@@ -1861,6 +1895,7 @@
     <span id="immortalLedTag" style="display:none; color:#ff9f1a; font-weight:800; margin-left:6px; text-shadow:0 0 6px rgba(255,159,26,0.6);">⚡ GOD MODE</span>
     <span id="crtStatus" style="cursor:pointer;" title="Click or Press K to toggle scanlines">SCANLINES: ON</span>
     <span id="btnZoomScreen" style="cursor:pointer; color:var(--cyan-oled); margin-left:6px; font-weight:800;" onclick="toggleScreenZoom()" title="Press Z or click to toggle 2X zoom">🔍 ZOOM 2X</span>
+    <span style="color:#6d828c; margin-left:6px; font-size:0.56rem;">Space: Quick-Play · Arrows/WASD: Move · ?: Help</span>
   </div>
 
   <!-- On-Screen Arcade Quick Controller Bar (Mouse, Touch & Visual Key Feedback) -->
@@ -11512,9 +11547,40 @@ const SOUNDBOARD_EXTRA_MAP = {
 const activeQwertySynthKeys = {};
 
 // Keyboard Listeners (Arrows, WASD, 1, 5, Space, Enter, R, B, K, Z, T, plus 27-Key QWERTY Synth/Pads)
+function toggleShortcutsModal(show) {
+  const m = document.getElementById('shortcutsModal');
+  if (!m) return;
+  const open = (typeof show === 'boolean') ? show : (m.style.display === 'none' || !m.style.display);
+  m.style.display = open ? 'flex' : 'none';
+}
+
+function updateAudioPill() {
+  const pill = document.getElementById('audioStatusPill');
+  if (!pill) return;
+  const armed = typeof audioCtx !== 'undefined' && audioCtx && audioCtx.state === 'running';
+  pill.textContent = armed ? '🔊 AUDIO ON' : '🔇 ARM AUDIO';
+  pill.style.borderColor = armed ? '#00ff66' : '#354656';
+  pill.style.color = armed ? '#00ff66' : '#9bb0ba';
+}
+window.addEventListener('pointerdown', () => setTimeout(updateAudioPill, 60), { passive: true });
+
 window.addEventListener('keydown', (e) => {
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+    toggleShortcutsModal();
+    e.preventDefault();
+    return;
+  }
+  if (e.key === 'Escape') {
+    const m = document.getElementById('shortcutsModal');
+    if (m && m.style.display === 'flex') {
+      toggleShortcutsModal(false);
+      e.preventDefault();
+      return;
+    }
+  }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   initAudio();
+  setTimeout(updateAudioPill, 40);
   if (typeof splashState !== 'undefined' && splashState.active) {
     if (typeof skipSplashScreen === 'function') skipSplashScreen();
     e.preventDefault();
@@ -11588,7 +11654,7 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     return;
   }
-  if (k === 'l' || (currentMode !== 'tour' && k === 'n')) {
+  if (k === 'l' || (currentMode !== 'tour' && k === 'n' && e.shiftKey)) {
     if (!e.repeat && typeof skipCurrentLevel === 'function') skipCurrentLevel();
     e.preventDefault();
     return;

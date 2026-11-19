@@ -101,8 +101,22 @@
     <h1>ARCADE RAT v1.0</h1>
     <p class="lead">
       Bare-metal Z80 Pac-Man arcade core &amp; 3-voice Namco WSG synthesizer compiled for JieLi AC791N (M-VAVE FM-1),
-      alongside the 8-game / 5-chip WebAudio studio simulator and 93-game configurator.
+      alongside the 8-game / 5-chip WebAudio studio simulator and 93-game profile configurator.
     </p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin-bottom:20px; font-size:0.78rem; color:#cdd9df;">
+      <div style="background:#0f161d; border:1px solid #22303c; border-radius:10px; padding:11px 13px;">
+        <strong style="color:#00e5ff;">1. Preview in Browser</strong><br>
+        <span style="color:#8ea3ae;">Test all 8 arcade cores, 5 synths &amp; tracker in the Web Simulator.</span>
+      </div>
+      <div style="background:#0f161d; border:1px solid #22303c; border-radius:10px; padding:11px 13px;">
+        <strong style="color:#00ff66;">2. Download .FWSC</strong><br>
+        <span style="color:#8ea3ae;">Grab the precompiled Rev 1 &amp; Rev 2 Pac-Man + WSG binary.</span>
+      </div>
+      <div style="background:#0f161d; border:1px solid #22303c; border-radius:10px; padding:11px 13px;">
+        <strong style="color:#aae4c8;">3. Flash via USB-C</strong><br>
+        <span style="color:#8ea3ae;">Run <code>m-flasher</code>, <code>FM1 Update</code>, or <code>M-UPGRADE</code>.</span>
+      </div>
+    </div>
     <div class="actions">
       <a class="btn primary" href="arcade_rat_fm1.fwsc" download="arcade_rat_fm1.fwsc">
         <strong>Download Firmware (.fwsc)</strong>
@@ -121,11 +135,14 @@
       <div>Product Identity: FM-1_8000014 (M-VAVE FM-1 WebUSB / SysEx &amp; Flasher Compatible)</div>
       <div>Hardware Toggle: Press REC + MUTE on FM-1 panel to toggle Arcade Rat &lt;-&gt; Groovebox Synth</div>
       <div>SHA-256: a503dd43d03738fd4b57197233799ade7d7beae349cb2011f2ce13c256e9fa6b</div>
-      <div>
-        Artifacts:
-        <a href="firmware/SHA256SUMS.txt">firmware/SHA256SUMS.txt</a> ·
-        <a href="firmware/build_report.json">firmware/build_report.json</a> ·
-        <a href="https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1">GitHub Repo</a>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:6px;">
+        <span>
+          Artifacts:
+          <a href="firmware/SHA256SUMS.txt">firmware/SHA256SUMS.txt</a> ·
+          <a href="firmware/build_report.json">firmware/build_report.json</a> ·
+          <a href="https://github.com/jonludwig1234/stack-trace-arcade-rat-fm1">GitHub Repo</a>
+        </span>
+        <button onclick="navigator.clipboard&&navigator.clipboard.writeText('m-flasher flash arcade_rat_fm1.fwsc');this.textContent='✓ Copied!';setTimeout(()=>this.textContent='📋 Copy m-flasher command',1800);" style="background:#16202a; border:1px solid #2b3a48; color:#aae4c8; padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer;">📋 Copy m-flasher command</button>
       </div>
     </div>
   </main>

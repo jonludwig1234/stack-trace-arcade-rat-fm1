@@ -453,7 +453,7 @@
   <div>
     <div class="card" style="margin-bottom: 20px;">
       <div class="card-title">
-        <span>Active Firmware Slots (12 Games Active)</span>
+        <span>1. Active Firmware Slots (12 Games Active)</span>
         <span style="font-size:0.65rem; color:#888; font-weight:700;">CLICK ANY SLOT TO REPLACE</span>
       </div>
 
@@ -526,7 +526,7 @@
 
     <!-- Hardware Mapping -->
     <div class="card" style="margin-bottom: 20px;">
-      <div class="card-title">FM-1 Hardware Key Mapping</div>
+      <div class="card-title">2. FM-1 Hardware Key Mapping</div>
       <div class="controls-mapping">
         <div class="mapping-row">
           <span>Crazy Climber Dual-Stick</span>
@@ -579,7 +579,7 @@
 
     <!-- Deploy -->
     <div class="card">
-      <div class="card-title">Deploy Firmware &amp; Profiles</div>
+      <div class="card-title">3. Deploy Firmware &amp; Profiles</div>
       <div style="font-size:0.65rem; color:#8a91a4; line-height:1.45; margin-bottom:10px;">
         <strong style="color:#aae4c8;">Precompiled .FWSC</strong> flashes the stock bare-metal Pac-Man + Namco WSG image.
         To customize the 12-slot build from source, export <code>fm1_active_games.h</code> or <code>arcade_config.json</code>.
@@ -587,6 +587,9 @@
       <div class="action-block">
         <button class="btn-primary" id="btnExportBin">
           ⬇️ Download Stock .FWSC (Pac-Man + WSG)
+        </button>
+        <button class="btn-secondary" type="button" onclick="navigator.clipboard&&navigator.clipboard.writeText('m-flasher flash arcade_rat_fm1.fwsc');showToast('Copied: m-flasher flash arcade_rat_fm1.fwsc');">
+          📋 Copy m-flasher Flash Command
         </button>
         <button class="btn-secondary" id="btnExportHeader">
           📄 Generate C Source Header (fm1_active_games.h)

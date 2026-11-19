@@ -4,6 +4,12 @@
 
 It transforms the pocket FM-1 synth into a full-fledged 80s arcade sound chip laboratory, tracker workstation, and playable retro arcade engine.
 
+## 🌐 Live Web UI (GitHub Pages)
+
+- **Portal & Firmware Download:** https://jonludwig1234.github.io/stack-trace-arcade-rat-fm1/
+- **Web Simulator (8 Arcade Cores · 5 Synths · Tracker · Speech):** https://jonludwig1234.github.io/stack-trace-arcade-rat-fm1/web/fm1_pacman_preview.html
+- **Firmware Configurator (93-Game Catalog & Key Mapping):** https://jonludwig1234.github.io/stack-trace-arcade-rat-fm1/web/configurator.html
+
 ---
 
 ## 🎬 1080p Video Showcase & Sound Demo
