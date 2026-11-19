@@ -599,6 +599,10 @@
         <button class="btn-secondary" id="btnSaveConfig">
           📋 Export arcade_config.json
         </button>
+        <button class="btn-secondary" id="btnLoadConfig" type="button">
+          📂 Import arcade_config.json
+        </button>
+        <input type="file" id="configFileInput" accept=".json" style="display:none;">
       </div>
     </div>
   </div>
@@ -819,6 +823,29 @@ document.getElementById('btnSaveConfig').onclick = () => {
   a.download = 'arcade_config.json';
   a.click();
   showToast('Exported arcade_config.json profile!');
+};
+
+document.getElementById('btnLoadConfig').onclick = () => document.getElementById('configFileInput').click();
+document.getElementById('configFileInput').onchange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const cfg = JSON.parse(await file.text());
+    if (Array.isArray(cfg.slots) && cfg.slots.length === 12) {
+      activeSlots = cfg.slots.map(id => CATALOG.some(g => g.id === id) ? id : 'pacman');
+      renderSlots();
+      renderCatalog(document.getElementById('searchGames').value, currentGenreFilter);
+    }
+    if (cfg.climber) document.getElementById('mapClimber').value = cfg.climber;
+    if (cfg.dpad) document.getElementById('mapDpad').value = cfg.dpad;
+    if (cfg.spinner) document.getElementById('mapSpinner').value = cfg.spinner;
+    if (cfg.throttle) document.getElementById('mapThrottle').value = cfg.throttle;
+    if (cfg.scanlines) document.getElementById('mapCrt').value = cfg.scanlines;
+    if (cfg.echo) document.getElementById('mapEcho').value = cfg.echo;
+    showToast(`Loaded profile ${file.name}!`);
+  } catch {
+    showToast('Invalid arcade_config.json file.');
+  }
 };
 
 // Initial Render

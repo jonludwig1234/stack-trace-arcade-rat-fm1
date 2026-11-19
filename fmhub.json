@@ -4,6 +4,7 @@
   "what": "Bare-metal Z80 retro arcade emulator, 5-engine sound chip synthesizer (WSG, AY-3-8910, POKEY, 2A03, 6-Op FM), 16-step multi-chip tracker, 108-key SFX soundboard, and vintage speech ROMs for M-VAVE FM-1.",
   "author": "Stack Trace",
   "version": "1.0.0",
+  "sounds": "Namco 3-voice WSG synthesis + Pac-Man arcade ROMs (Z80)",
   "kinds": [
     "arcade",
     "synth",
