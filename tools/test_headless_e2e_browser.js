@@ -93,8 +93,8 @@ async function runE2E() {
             const c = document.getElementById('tftCanvas');
             ({ width: c.width, height: c.height, id: c.id, hasCtx: !!c.getContext('2d') })
           `);
-          assert(canvasCheck && canvasCheck.width === 240 && canvasCheck.height === 240, `Canvas must be 240x240, got: ${JSON.stringify(canvasCheck)}`);
-          console.log(`   ✓ #tftCanvas verified in DOM: 240x240 pixels with 2D rendering context!`);
+          assert(canvasCheck && canvasCheck.width === 720 && canvasCheck.height === 720, `Canvas must be 720x720 HiDPI, got: ${JSON.stringify(canvasCheck)}`);
+          console.log(`   ✓ #tftCanvas verified in DOM: 720x720 HiDPI pixels with 2D rendering context!`);
 
           console.log("\n3. Testing Real Pixel Rendering Across All 8 Arcade Games...");
           const games = ['pacman', 'cclimber', 'galaga', 'dkong', 'frogger', 'asteroids', 'tempest', 'gyruss'];

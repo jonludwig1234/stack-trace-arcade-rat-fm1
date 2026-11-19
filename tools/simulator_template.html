@@ -1888,7 +1888,7 @@
   <!-- Center 240x240 CRT Screen Bezel -->
   <div class="screen-bezel" id="screenBezel" title="Click quadrants to steer character!">
     <div class="lcd-surface">
-      <canvas id="tftCanvas" width="240" height="240" aria-label="FM1 设备屏幕仿真"></canvas>
+      <canvas id="tftCanvas" width="720" height="720" aria-label="FM1 设备屏幕仿真"></canvas>
       <div class="screen-quadrant-hints">
         <span class="quadrant-hint hint-up">▲</span>
         <span class="quadrant-hint hint-down">▼</span>
@@ -5811,8 +5811,10 @@ for (let i = 0; i < 32; i++) {
   paletteColors[i] = [r, g, b];
 }
 
+const FM1_SCREEN_SCALE = 3;
 const canvas = document.getElementById('tftCanvas');
 const ctx = canvas.getContext('2d');
+if (ctx && ctx.setTransform) ctx.setTransform(FM1_SCREEN_SCALE, 0, 0, FM1_SCREEN_SCALE, 0, 0);
 const imgData = ctx.createImageData(240, 240);
 const buf32 = new Uint32Array(imgData.data.buffer);
 const arcadeBuf = new Uint32Array(224 * 288);
@@ -5851,9 +5853,9 @@ function drawSprite(spriteNo, palNo, sx, sy, flipX, flipY) {
 let crtScanlines = true;
 function drawScanlines() {
   if (!crtScanlines) return;
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
   for (let y = 1; y < 240; y += 2) {
-    ctx.fillRect(0, y, 240, 1);
+    ctx.fillRect(0, y, 240, 0.4);
   }
 }
 
@@ -11827,6 +11829,7 @@ function stepCpuFrame() {
 }
 
 function mainLoop() {
+  if (ctx && ctx.setTransform) ctx.setTransform(FM1_SCREEN_SCALE, 0, 0, FM1_SCREEN_SCALE, 0, 0);
   if (splashState.active) {
     renderSplashScreen();
     if (crtScanlines) drawScanlines();
@@ -12016,8 +12019,8 @@ function mainLoop() {
     renderSynthOscilloscope();
   } else if (currentMode === 'demo') {
     // Dynamic Multi-Track VU Meter & Jukebox Visualizer
-    buf32.fill(0xff0e1017);
-    ctx.putImageData(imgData, 0, 0);
+    ctx.fillStyle = '#0e1017';
+    ctx.fillRect(0, 0, 240, 240);
 
     const song = DEMO_SONGS[demoPlayer.currentSongIdx];
     ctx.fillStyle = '#f5a623';
@@ -12063,8 +12066,8 @@ function mainLoop() {
     if (crtScanlines && typeof drawScanlines === 'function') drawScanlines();
   } else if (currentMode === 'soundboard') {
     animTick++;
-    buf32.fill(0xff141720);
-    ctx.putImageData(imgData, 0, 0);
+    ctx.fillStyle = '#141720';
+    ctx.fillRect(0, 0, 240, 240);
     if (typeof currentStudioTab !== 'undefined' && currentStudioTab === 'speech') {
       ctx.fillStyle = '#00e5ff';
       ctx.font = 'bold 12px monospace';
@@ -12117,14 +12120,19 @@ function mainLoop() {
     if (crtScanlines && typeof drawScanlines === 'function') drawScanlines();
   } else if (currentMode === 'vector') {
     animTick++;
-    buf32.fill(0xff080a0e);
-    for (let t = 0; t < 360; t++) {
+    ctx.fillStyle = '#080a0e';
+    ctx.fillRect(0, 0, 240, 240);
+    ctx.strokeStyle = '#00ffcc';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let t = 0; t <= 360; t++) {
       const rad = t * Math.PI / 180;
-      const x = Math.floor(120 + 80 * Math.sin(rad * 3 + animTick * 0.05));
-      const y = Math.floor(120 + 80 * Math.cos(rad * 2 + animTick * 0.03));
-      if (x >= 0 && x < 240 && y >= 0 && y < 240) buf32[y * 240 + x] = 0xff00ffcc;
+      const x = 120 + 80 * Math.sin(rad * 3 + animTick * 0.05);
+      const y = 120 + 80 * Math.cos(rad * 2 + animTick * 0.03);
+      if (t === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
-    ctx.putImageData(imgData, 0, 0);
+    ctx.stroke();
     ctx.fillStyle = '#00ffcc';
     ctx.font = 'bold 12px monospace';
     ctx.fillText('XY LISSAJOUS VECTOR OSC', 12, 22);
