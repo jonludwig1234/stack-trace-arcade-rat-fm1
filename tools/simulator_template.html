@@ -680,14 +680,17 @@
   /* Below Screen Silkscreen Caption */
   .screen-caption {
     position: absolute;
-    top: 48.9%;
+    top: 48.6%;
     left: 29.2%;
     width: 25.6%;
     display: flex;
     justify-content: space-between;
-    font: 700 .65cqw Consolas, "Liberation Mono", monospace;
-    letter-spacing: .12em;
+    align-items: center;
+    gap: 4px;
+    font: 700 .62cqw Consolas, "Liberation Mono", monospace;
+    letter-spacing: .08em;
     color: #92a29f;
+    white-space: nowrap;
   }
   .screen-caption span { cursor: default; }
 
@@ -1129,33 +1132,34 @@
 
   /* Interactive On-Screen Arcade Quick Controller Bar */
   .arcade-controller-deck {
-    position: absolute;
-    left: 28.5%;
-    top: 50.1%;
-    width: 27%;
+    width: 100%;
+    max-width: 960px;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    background: rgba(14, 20, 26, 0.92);
-    border: 1px solid rgba(0, 229, 255, 0.25);
-    border-radius: 4px;
-    padding: 2px 4px;
-    gap: 2px;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
-    z-index: 20;
+    background: #11161b;
+    border: 1px solid #222c36;
+    border-radius: 8px;
+    padding: 6px 8px;
+    gap: 6px;
+    margin-bottom: 10px;
   }
   .ctrl-btn {
-    flex: 1;
-    background: #1b2329;
-    color: #aae4c8;
-    border: 1px solid #2e3d46;
-    border-radius: 3px;
+    flex: 1 1 auto;
+    min-width: 72px;
+    min-height: 28px;
+    background: #182028;
+    color: #cde7da;
+    border: 1px solid #2c3a44;
+    border-radius: 6px;
     font-family: var(--font-mono);
-    font-size: 0.58rem;
+    font-size: 0.64rem;
     font-weight: 800;
-    padding: 3px 2px;
+    padding: 4px 8px;
     cursor: pointer;
     text-align: center;
+    white-space: nowrap;
     transition: all 0.08s ease-in-out;
     user-select: none;
   }
@@ -1896,24 +1900,9 @@
   <div class="screen-caption">
     <span id="hudStatus">● ATTRACT MODE</span>
     <span id="hudCredits">CREDITS: 0</span>
-    <span id="immortalLedTag" style="display:none; color:#ff9f1a; font-weight:800; margin-left:6px; text-shadow:0 0 6px rgba(255,159,26,0.6);">⚡ GOD MODE</span>
-    <span id="crtStatus" style="cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; min-height:24px;" title="Click or Press K to toggle scanlines">SCANLINES: ON</span>
-    <span id="btnZoomScreen" style="cursor:pointer; color:var(--cyan-oled); margin-left:6px; font-weight:800; white-space:nowrap; display:inline-flex; align-items:center; min-height:24px;" onclick="toggleScreenZoom()" title="Press Z or click to toggle 2X zoom">🔍 ZOOM 2X</span>
-    <span style="color:#8fa5b2; margin-left:6px; font-size:0.58rem; white-space:nowrap;">Space: Quick-Play · Arrows/WASD: Move · ?: Help</span>
-  </div>
-
-  <!-- On-Screen Arcade Quick Controller Bar (Mouse, Touch & Visual Key Feedback) -->
-  <div class="arcade-controller-deck" id="arcadeControllerDeck">
-    <button class="ctrl-btn" id="ctrlBtnLeft" title="Left (A / ◀)">◀ LEFT</button>
-    <button class="ctrl-btn" id="ctrlBtnUp" title="Up / Jump (W / ▲)">▲ UP</button>
-    <button class="ctrl-btn" id="ctrlBtnDown" title="Down / Climb (S / ▼)">▼ DOWN</button>
-    <button class="ctrl-btn" id="ctrlBtnRight" title="Right (D / ▶)">▶ RIGHT</button>
-    <button class="ctrl-btn ctrl-action" id="ctrlBtnFire" title="Action / Fire / Jump (Space)">🔴 ACTION</button>
-    <button class="ctrl-btn ctrl-coin" id="ctrlBtnCoin" title="Insert Coin (1 / C)">🪙 COIN</button>
-    <button class="ctrl-btn ctrl-start" id="ctrlBtnStart" title="Start Game (5 / Enter)">▶ START</button>
-    <button class="ctrl-btn ctrl-god" id="ctrlBtnImmortal" onclick="toggleImmortalMode()" title="Toggle Immortal God Mode (I / G)">⚡ IMMORTAL</button>
-    <button class="ctrl-btn ctrl-skip" id="ctrlBtnLevelSkip" onclick="skipCurrentLevel()" title="Skip Current Level / Advance Stage (L / N)">⏩ SKIP LVL</button>
-    <button class="ctrl-btn ctrl-zoom" id="ctrlBtnZoom" onclick="toggleScreenZoom()" title="Toggle 2X Screen Zoom (Z)">🔍 ZOOM</button>
+    <span id="immortalLedTag" style="display:none; color:#ff9f1a; font-weight:800; text-shadow:0 0 6px rgba(255,159,26,0.6);">⚡ GOD</span>
+    <span id="crtStatus" style="cursor:pointer; white-space:nowrap;" title="Click or Press K to toggle scanlines">SCANLINES: ON</span>
+    <span id="btnZoomScreen" style="cursor:pointer; color:var(--cyan-oled); font-weight:800; white-space:nowrap;" onclick="toggleScreenZoom()" title="Press Z or click to toggle 2X zoom">🔍 2X</span>
   </div>
 
 
@@ -1984,6 +1973,20 @@
   <!-- 27-Key Silicone Performance Keyboard -->
   <div id="pianoKeys" class="keyboard" aria-label="27 键演奏与步进键盘"></div>
 </div>
+</div>
+
+<!-- On-Screen Arcade Quick Controller Bar (Mouse, Touch & Visual Key Feedback) -->
+<div class="arcade-controller-deck" id="arcadeControllerDeck">
+  <button class="ctrl-btn" id="ctrlBtnLeft" title="Left (A / ◀)">◀ LEFT</button>
+  <button class="ctrl-btn" id="ctrlBtnUp" title="Up / Jump (W / ▲)">▲ UP</button>
+  <button class="ctrl-btn" id="ctrlBtnDown" title="Down / Climb (S / ▼)">▼ DOWN</button>
+  <button class="ctrl-btn" id="ctrlBtnRight" title="Right (D / ▶)">▶ RIGHT</button>
+  <button class="ctrl-btn ctrl-action" id="ctrlBtnFire" title="Action / Fire / Jump (Space)">🔴 ACTION</button>
+  <button class="ctrl-btn ctrl-coin" id="ctrlBtnCoin" title="Insert Coin (1 / C)">🪙 COIN</button>
+  <button class="ctrl-btn ctrl-start" id="ctrlBtnStart" title="Start Game (5 / Enter)">▶ START</button>
+  <button class="ctrl-btn ctrl-god" id="ctrlBtnImmortal" onclick="toggleImmortalMode()" title="Toggle Immortal God Mode (I / G)">⚡ IMMORTAL</button>
+  <button class="ctrl-btn ctrl-skip" id="ctrlBtnLevelSkip" onclick="skipCurrentLevel()" title="Skip Current Level / Advance Stage (L / Shift+N)">⏩ SKIP LVL</button>
+  <button class="ctrl-btn ctrl-zoom" id="ctrlBtnZoom" onclick="toggleScreenZoom()" title="Toggle 2X Screen Zoom (Z)">🔍 ZOOM</button>
 </div>
 
 <!-- =========================================================================

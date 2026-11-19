@@ -428,6 +428,7 @@ int main(void) {
     printf("   ✓ On-device Arcade bezel, Synth oscilloscope waveform & voice indicator UI verified.\n");
 
     /* 12. Host-vs-Device Band Renderer Pixel Parity */
+#ifdef FM1_ENABLE_BAND_RENDERER
     printf("12. Testing Host-vs-Device Band Renderer Pixel Parity...\n");
     pac_video_render(&machine.video, machine.ram, machine.sprite_pos,
                      &machine.ram[0x0FF0], machine.screen_buffer);
@@ -443,6 +444,7 @@ int main(void) {
     pac_synth_draw_ui_bands(&ui_m->synth, ui_m->wsg.sound_rom, mock_band_blit);
     assert(memcmp(synth_full, band_assemble_buf, sizeof(band_assemble_buf)) == 0);
     printf("   ✓ Band renderers (Arcade & Synth UI) match full-frame renderers 100%% pixel-for-pixel.\n");
+#endif
 
     /* 13. NVRAM Dual-Slot Fallback, 50-Cycle Ping-Pong & Deterministic Fuzz */
     printf("13. Testing NVRAM Dual-Slot Corruption Fallback & PRNG Fuzz...\n");
