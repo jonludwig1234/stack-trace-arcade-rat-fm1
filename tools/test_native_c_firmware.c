@@ -369,6 +369,51 @@ int main(void) {
     pac_video_render(NULL, machine.ram, machine.sprite_pos, machine.ram, machine.screen_buffer);
     printf("   ✓ Flash boundaries, fault-injection, CRC mismatch & atomic recovery verified.\n");
 
+    /* 11. Firmware On-Device 240x240 ST7789 UI/UX Visual & Interactive Verification */
+    printf("11. Testing Firmware On-Device 240x240 UI/UX (Bezel, Synth Oscilloscope & Voice Bars)...\n");
+    memset(&mock_controls_state, 0, sizeof(mock_controls_state));
+    fm1_pacman_init();
+    const pac_machine_t *ui_m = fm1_pacman_get_machine();
+
+    /* 11a. Arcade mode: run frames so VBLANK renders, verify 8px left/right bezel (0x0842) */
+    for (int f = 0; f < 120; f++) fm1_pacman_tick_frame();
+    assert(ui_m->vblank_enabled == true);
+    assert(ui_m->screen_buffer[0] == 0x0842 && ui_m->screen_buffer[7] == 0x0842);
+    assert(ui_m->screen_buffer[232] == 0x0842 && ui_m->screen_buffer[239] == 0x0842);
+
+    /* 11b. Toggle to Synth Mode via Button 3 (MUTE) and render oscilloscope UI */
+    mock_controls_state.buttons = (1U << 3);
+    fm1_pacman_tick_frame();
+    mock_controls_state.buttons = 0;
+    assert(ui_m->mode == PAC_MODE_SYNTH);
+
+    /* Verify voice 0 indicator bar (x=40..79, y=210..224) is idle gray (0x7BEF) */
+    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x7BEF);
+
+    /* Hold key 0 -> voice 0 bar turns active green (0x07E0) */
+    mock_controls_state.keys = (1U << 0);
+    fm1_pacman_tick_frame();
+    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x07E0);
+
+    /* Snapshot waveform pixels, rotate Encoder 1 -> waveform pixels visually change */
+    uint16_t wave_snap[240];
+    for (int x = 0; x < 240; x++) wave_snap[x] = ui_m->screen_buffer[120 * 240 + x];
+    mock_controls_state.keys = 0;
+    mock_controls_state.encoders[1] = 3; /* switch waveform 0 -> 3 */
+    fm1_pacman_tick_frame();
+    assert(ui_m->synth.current_waveform == 3);
+    assert(ui_m->screen_buffer[215 * 240 + 50] == 0x7BEF); /* voice bar back to idle */
+    int wave_diffs = 0;
+    for (int x = 0; x < 240; x++) {
+        for (int y = 60; y < 180; y++) {
+            if (ui_m->screen_buffer[y * 240 + x] == 0x07FF && y == 120 && wave_snap[x] != 0x07FF) {
+                wave_diffs++;
+            }
+        }
+    }
+    assert(wave_diffs > 0);
+    printf("   ✓ On-device Arcade bezel, Synth oscilloscope waveform & voice indicator UI verified.\n");
+
     printf("\n=========================================================================\n");
     printf(">>> ALL NATIVE C FIRMWARE UNIT TESTS PASSED 100%%! <<<\n");
     printf("=========================================================================\n");
