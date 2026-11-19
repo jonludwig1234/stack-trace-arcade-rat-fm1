@@ -413,6 +413,8 @@ int main(void) {
     mock_controls_state.encoders[1] = 3; /* switch waveform 0 -> 3 */
     fm1_pacman_tick_frame();
     assert(ui_m->synth.current_waveform == 3);
+    assert(ui_m->screen_buffer[9 * 240 + (16 + 3 * 26 + 5)] == 0x07FF); /* WSG 3 indicator lit */
+    assert(ui_m->screen_buffer[9 * 240 + (16 + 0 * 26 + 5)] == 0x2124); /* WSG 0 indicator dim */
     assert(ui_m->screen_buffer[215 * 240 + 50] == 0x7BEF); /* voice bar back to idle */
     int wave_diffs = 0;
     for (int x = 0; x < 240; x++) {

@@ -464,6 +464,7 @@
         <button class="pill" onclick="loadPreset('allstar')" id="presetAllstar" style="background:#2a2310; border-color:var(--amber-core); color:var(--amber-core); font-weight:800;">🌟 All-Star Core (inc. Crazy Climber)</button>
         <button class="pill" onclick="loadPreset('twinstick')" id="presetTwinstick">🧗 Twin-Stick & Rotary Elite</button>
         <button class="pill" onclick="loadPreset('classics')" id="presetClassics">🚀 Golden 1980 Classics</button>
+        <button class="pill" onclick="loadPreset('allstar')" title="Reset to default 12-slot configuration" style="margin-left:auto; border-color:#354656; color:#9bb0ba;">↺ Reset</button>
       </div>
 
       <div class="slot-grid" id="slotsGrid"></div>
@@ -676,12 +677,27 @@ function updateMemoryGauge(totalRomSize) {
   const coreSize = 110.0;
   const totalUsed = coreSize + totalRomSize;
   const maxFlash = 1024.0;
-  const pct = (totalUsed / maxFlash * 100).toFixed(1);
+  const pctNum = (totalUsed / maxFlash) * 100;
+  const pct = pctNum.toFixed(1);
   const freeKb = (maxFlash - totalUsed).toFixed(1);
+  const gauge = document.getElementById('flashGauge');
+  const freeEl = document.getElementById('freeText');
+  const exportHeaderBtn = document.getElementById('btnExportHeader');
 
   document.getElementById('flashText').textContent = `${totalUsed.toFixed(1)} KB / 1,024 KB (${pct}%)`;
-  document.getElementById('flashGauge').style.width = pct + '%';
-  document.getElementById('freeText').textContent = `Free Headroom: ${freeKb} KB (${(100 - pct).toFixed(1)}%)`;
+  gauge.style.width = Math.min(100, pctNum).toFixed(1) + '%';
+
+  if (totalUsed > maxFlash) {
+    freeEl.textContent = `OVER BUDGET by ${Math.abs(maxFlash - totalUsed).toFixed(1)} KB — remove a large ROM`;
+    freeEl.style.color = '#ff4757';
+    gauge.style.background = '#ff4757';
+    if (exportHeaderBtn) { exportHeaderBtn.disabled = true; exportHeaderBtn.style.opacity = '0.5'; }
+  } else {
+    freeEl.textContent = `Free Headroom: ${freeKb} KB (${(100 - pctNum).toFixed(1)}%)`;
+    freeEl.style.color = pctNum >= 90 ? '#f5a623' : 'var(--green-neon)';
+    gauge.style.background = '';
+    if (exportHeaderBtn) { exportHeaderBtn.disabled = false; exportHeaderBtn.style.opacity = '1'; }
+  }
 }
 
 function selectSlot(idx) {

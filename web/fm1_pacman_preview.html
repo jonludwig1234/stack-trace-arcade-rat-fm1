@@ -1406,7 +1406,7 @@
   <div style="max-width:640px; width:100%; background:#121720; border:1px solid #00e5ff; border-radius:12px; padding:20px 22px; box-shadow:0 20px 50px rgba(0,0,0,0.85); color:#e6eef2; font-family:var(--font-mono);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #24303c; padding-bottom:8px;">
       <strong style="color:#00e5ff; font-size:0.9rem; letter-spacing:1px;">⌨️ ARCADE RAT · KEYBOARD SHORTCUTS &amp; QUICK START</strong>
-      <button onclick="toggleShortcutsModal(false)" style="background:#1c2530; border:1px solid #354656; color:#e6eef2; border-radius:6px; padding:3px 9px; cursor:pointer; font-weight:800;">ESC ✕</button>
+      <button id="btnCloseShortcutsModal" onclick="toggleShortcutsModal(false)" style="background:#1c2530; border:1px solid #354656; color:#e6eef2; border-radius:6px; padding:4px 10px; min-height:26px; cursor:pointer; font-weight:800;">ESC ✕</button>
     </div>
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; font-size:0.72rem; line-height:1.6;">
       <div>
@@ -1844,19 +1844,20 @@
   </div>
 </div>
 
-<!-- Secondary Navigation & Mode Indicators -->
-<div class="nav-strip" style="margin-bottom: 6px; opacity: 0.88;">
-  <div class="mode-indicator" style="width: 100%; justify-content: center; gap: 4px;">
-    <div class="mode-tag active" data-mode="arcade">ARCADE</div>
-    <div class="mode-tag" data-mode="synth">SYNTH STUDIO</div>
-    <div class="mode-tag" data-mode="tracker">TRACKER</div>
-    <div class="mode-tag" data-mode="demo">DEMO SONGS</div>
-    <div class="mode-tag" data-mode="soundboard">SFX PADS (27)</div>
-    <div class="mode-tag" data-mode="speech" onclick="setStudioTab('speech')">SPEECH ROM</div>
-    <div class="mode-tag" data-mode="tour">TOUR DEMO</div>
-    <div class="mode-tag" data-mode="rewind">REWIND</div>
-    <div class="mode-tag" data-mode="vector">LISSAJOUS</div>
-    <div class="mode-tag" data-mode="glitch">BENDER</div>
+<!-- Secondary CRT & DSP Utility Strip (redundant workspace tabs hidden visually, kept in DOM for compatibility) -->
+<div class="nav-strip" style="margin-bottom: 6px; opacity: 0.92;">
+  <div class="mode-indicator" style="width: 100%; justify-content: center; gap: 6px;">
+    <span style="font-size:0.56rem; color:#8fa5b2; font-family:var(--font-mono); font-weight:800; letter-spacing:0.8px;">CRT / DSP TOOLS:</span>
+    <div class="mode-tag active" data-mode="arcade" style="display:none;">ARCADE</div>
+    <div class="mode-tag" data-mode="synth" style="display:none;">SYNTH STUDIO</div>
+    <div class="mode-tag" data-mode="tracker" style="display:none;">TRACKER</div>
+    <div class="mode-tag" data-mode="demo" style="display:none;">DEMO SONGS</div>
+    <div class="mode-tag" data-mode="soundboard" style="display:none;">SFX PADS (27)</div>
+    <div class="mode-tag" data-mode="speech" onclick="setStudioTab('speech')" style="display:none;">SPEECH ROM</div>
+    <div class="mode-tag" data-mode="tour" style="display:none;">TOUR DEMO</div>
+    <div class="mode-tag" data-mode="rewind">⏪ REWIND</div>
+    <div class="mode-tag" data-mode="vector">〰️ LISSAJOUS</div>
+    <div class="mode-tag" data-mode="glitch">⚡ BENDER</div>
   </div>
 </div>
 
@@ -1896,9 +1897,9 @@
     <span id="hudStatus">● ATTRACT MODE</span>
     <span id="hudCredits">CREDITS: 0</span>
     <span id="immortalLedTag" style="display:none; color:#ff9f1a; font-weight:800; margin-left:6px; text-shadow:0 0 6px rgba(255,159,26,0.6);">⚡ GOD MODE</span>
-    <span id="crtStatus" style="cursor:pointer;" title="Click or Press K to toggle scanlines">SCANLINES: ON</span>
-    <span id="btnZoomScreen" style="cursor:pointer; color:var(--cyan-oled); margin-left:6px; font-weight:800;" onclick="toggleScreenZoom()" title="Press Z or click to toggle 2X zoom">🔍 ZOOM 2X</span>
-    <span style="color:#6d828c; margin-left:6px; font-size:0.56rem;">Space: Quick-Play · Arrows/WASD: Move · ?: Help</span>
+    <span id="crtStatus" style="cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; min-height:24px;" title="Click or Press K to toggle scanlines">SCANLINES: ON</span>
+    <span id="btnZoomScreen" style="cursor:pointer; color:var(--cyan-oled); margin-left:6px; font-weight:800; white-space:nowrap; display:inline-flex; align-items:center; min-height:24px;" onclick="toggleScreenZoom()" title="Press Z or click to toggle 2X zoom">🔍 ZOOM 2X</span>
+    <span style="color:#8fa5b2; margin-left:6px; font-size:0.58rem; white-space:nowrap;">Space: Quick-Play · Arrows/WASD: Move · ?: Help</span>
   </div>
 
   <!-- On-Screen Arcade Quick Controller Bar (Mouse, Touch & Visual Key Feedback) -->
@@ -25023,6 +25024,13 @@ function toggleShortcutsModal(show) {
   if (!m) return;
   const open = (typeof show === 'boolean') ? show : (m.style.display === 'none' || !m.style.display);
   m.style.display = open ? 'flex' : 'none';
+  if (open) {
+    const closeBtn = document.getElementById('btnCloseShortcutsModal');
+    if (closeBtn) closeBtn.focus();
+  } else {
+    const helpBtn = document.getElementById('btnShortcutsHelp');
+    if (helpBtn) helpBtn.focus();
+  }
 }
 
 function updateAudioPill() {

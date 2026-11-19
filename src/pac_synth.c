@@ -132,6 +132,18 @@ void pac_synth_draw_ui(const pac_synth_t *s, const uint8_t *sound_rom, uint16_t 
         }
     }
 
+    /* Draw 8-segment active WSG waveform indicator (0..7) at top */
+    uint8_t active_w = s->current_waveform & 0x07U;
+    for (int w = 0; w < 8; ++w) {
+        uint16_t wcol = (w == active_w) ? wave_color : grid;
+        int sx = 16 + w * 26;
+        for (int by = 6; by < 13; ++by) {
+            for (int bx = sx; bx < sx + 22; ++bx) {
+                tft_output[by * 240 + bx] = wcol;
+            }
+        }
+    }
+
     /* Draw 3 voice indicator bars at the bottom */
     for (int v = 0; v < WSG_VOICES; ++v) {
         uint16_t col = s->voices[v].active ? voice_active : voice_idle;
@@ -176,6 +188,17 @@ void pac_synth_draw_ui_bands(const pac_synth_t *s, const uint8_t *sound_rom, pac
                 int wy = 120 - val * 7;
                 if ((int)y == wy || (int)y == wy + 1) {
                     row[x] = wave_color;
+                }
+            }
+
+            if (y >= 6U && y < 13U) {
+                uint8_t active_w = s->current_waveform & 0x07U;
+                for (int w = 0; w < 8; ++w) {
+                    uint16_t wcol = (w == active_w) ? wave_color : grid;
+                    int sx = 16 + w * 26;
+                    for (int bx = sx; bx < sx + 22; ++bx) {
+                        row[bx] = wcol;
+                    }
                 }
             }
 
