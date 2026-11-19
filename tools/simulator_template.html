@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c1014'/%3E%3Cpath d='M16 4a12 12 0 1 0 10.4 18L16 16l10.4-6A12 12 0 0 0 16 4z' fill='%23ffd200'/%3E%3C/svg%3E">
 <title>STACK TRACE presents Arcade Rat v1.0 · M-VAVE FM-1 Synthesizer / Workbench</title>
 <style>
   :root {
@@ -93,7 +94,8 @@
     background: #182823;
     border: 1px solid #37574b;
     color: #c6eddb;
-    padding: 4px 9px;
+    padding: 5px 10px;
+    min-height: 26px;
     font-size: 0.62rem;
     font-weight: 800;
     border-radius: 5px;
@@ -109,7 +111,8 @@
     background: #1c2326;
     border: 1px solid #364448;
     color: #e2ece6;
-    padding: 4px 10px;
+    padding: 5px 10px;
+    min-height: 26px;
     border-radius: 5px;
     font-size: 0.62rem;
     font-weight: 800;
@@ -129,13 +132,13 @@
     width: 100%;
     max-width: 960px;
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
     background: #111619;
     padding: 3px;
     border-radius: 8px;
     border: 1px solid #233034;
     margin-bottom: 6px;
-    overflow-x: auto;
   }
   .studio-tab {
     flex: 1;
@@ -11563,6 +11566,18 @@ function updateAudioPill() {
   pill.style.color = armed ? '#00ff66' : '#9bb0ba';
 }
 window.addEventListener('pointerdown', () => setTimeout(updateAudioPill, 60), { passive: true });
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('div[onclick], span[onclick]').forEach((el) => {
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        el.click();
+      }
+    });
+  });
+});
 
 window.addEventListener('keydown', (e) => {
   if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
