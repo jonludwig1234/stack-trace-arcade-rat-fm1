@@ -196,6 +196,88 @@ async function runE2E() {
           assert(clickSweep.masterGainVal > 0, "Live Web Audio masterGain must be active and > 0");
           console.log(`   ✓ Clicked ${clickSweep.clicked} live DOM controls, tabs & cards + verified live Web Audio Synth & MasterGain!`);
 
+          console.log("\n7b. Testing Real Pointer Click + Space Jump & Edge Clamping in Donkey Kong...");
+          await evaluate(`
+            setMode('arcade');
+            switchActiveGame('pacman');
+          `);
+          await new Promise(r => setTimeout(r, 80));
+
+          const clickReal = async (selector) => {
+            const box = await evaluate(`
+              (() => {
+                const el = document.querySelector('${selector}');
+                if (!el) return null;
+                el.scrollIntoView({ block: 'center', inline: 'center' });
+                const r = el.getBoundingClientRect();
+                return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+              })()
+            `);
+            assert(box && box.w > 0 && box.h > 0, `Control ${selector} must have visible layout box, got: ${JSON.stringify(box)}`);
+            await sendCmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: box.x, y: box.y, button: 'none' });
+            await sendCmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: box.x, y: box.y, button: 'left', clickCount: 1 });
+            await sendCmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: box.x, y: box.y, button: 'left', clickCount: 1 });
+          };
+
+          await clickReal('#btnGameDkong');
+          await new Promise(r => setTimeout(r, 250));
+          const afterCard = await evaluate(`({ activeGame, tick: dkongGame.tick, activeId: document.activeElement ? document.activeElement.id : '' })`);
+          assert.strictEqual(afterCard.activeGame, 'dkong', 'Clicking #btnGameDkong must activate Donkey Kong');
+          assert(afterCard.tick >= 5, `Donkey Kong tick must advance after card click, got: ${afterCard.tick}`);
+          assert.notStrictEqual(afterCard.activeId, 'btnGameDkong', '#btnGameDkong must not hold DOM focus after click');
+
+          await sendCmd('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', text: ' ', windowsVirtualKeyCode: 32 });
+          await new Promise(r => setTimeout(r, 60));
+          const afterJump1 = await evaluate(`({ tick: dkongGame.tick, state: dkongGame.mario.state, vy: dkongGame.mario.vy, y: dkongGame.mario.y })`);
+          await sendCmd('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+          assert(afterJump1.state === 'jump' || afterJump1.vy < 0 || afterJump1.y < 218, `Mario must jump on Space, got: ${JSON.stringify(afterJump1)}`);
+          assert(afterJump1.tick > afterCard.tick, `Donkey Kong must not reset on Space jump (${afterCard.tick} -> ${afterJump1.tick})`);
+
+          await new Promise(r => setTimeout(r, 500));
+          await clickReal('#ctrlBtnStart');
+          await new Promise(r => setTimeout(r, 250));
+          const afterStart = await evaluate(`({ tick: dkongGame.tick, activeId: document.activeElement ? document.activeElement.id : '' })`);
+          assert(afterStart.tick >= 5, `Donkey Kong tick must advance after #ctrlBtnStart click, got: ${afterStart.tick}`);
+          assert.notStrictEqual(afterStart.activeId, 'ctrlBtnStart', '#ctrlBtnStart must not hold DOM focus after click');
+
+          await sendCmd('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', text: ' ', windowsVirtualKeyCode: 32 });
+          await new Promise(r => setTimeout(r, 60));
+          const afterJump2 = await evaluate(`({ tick: dkongGame.tick, state: dkongGame.mario.state, vy: dkongGame.mario.vy, y: dkongGame.mario.y })`);
+          await sendCmd('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+          assert(afterJump2.state === 'jump' || afterJump2.vy < 0 || afterJump2.y < 218, `Mario must jump on Space after #ctrlBtnStart click, got: ${JSON.stringify(afterJump2)}`);
+          assert(afterJump2.tick > afterStart.tick, `Donkey Kong must not reset on Space after #ctrlBtnStart (${afterStart.tick} -> ${afterJump2.tick})`);
+
+          const clampRes = await evaluate(`
+            (() => {
+              initDonkeyKongGame();
+              dkongGame.barrels = [];
+              dkongGame.fireballs = [];
+              const m = dkongGame.mario;
+              m.currentGirder = 0; m.x = 20; m.y = getGirderY(20, 0) - 6; m.onGround = true; m.state = 'stand'; m.vx = 0; m.vy = 0;
+              arcadeKeysDown['arrowleft'] = true;
+              updateDonkeyKongGame();
+              dkongJump();
+              let minX = m.x;
+              for (let i = 0; i < 30; i++) { updateDonkeyKongGame(); if (m.x < minX) minX = m.x; }
+              delete arcadeKeysDown['arrowleft'];
+
+              initDonkeyKongGame();
+              dkongGame.barrels = [];
+              dkongGame.fireballs = [];
+              m.currentGirder = 0; m.x = 220; m.y = getGirderY(220, 0) - 6; m.onGround = true; m.state = 'stand'; m.vx = 0; m.vy = 0;
+              arcadeKeysDown['arrowright'] = true;
+              updateDonkeyKongGame();
+              dkongJump();
+              let maxX = m.x;
+              for (let i = 0; i < 30; i++) { updateDonkeyKongGame(); if (m.x > maxX) maxX = m.x; }
+              delete arcadeKeysDown['arrowright'];
+              return { minX, maxX };
+            })()
+          `);
+          assert(clampRes.minX >= 18, `Mario jumped off left edge: minX=${clampRes.minX}`);
+          assert(clampRes.maxX <= 222, `Mario jumped off right edge: maxX=${clampRes.maxX}`);
+          console.log(`   ✓ Real pointer click + Space jump (card & START) non-resetting + jump edge clamping verified (minX=${clampRes.minX}, maxX=${clampRes.maxX})!`);
+
           console.log("\n8. Final Console Stability Check...");
           assert.strictEqual(consoleErrors.length, 0, `Errors occurred during run: ${consoleErrors.join('; ')}`);
           console.log("   ✓ 0 runtime exceptions or uncaught promise rejections observed throughout entire E2E session!");

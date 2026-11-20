@@ -21041,6 +21041,7 @@ function stopCurrentGame() {
 
 function switchActiveGame(gameId) {
   initAudio();
+  if (typeof blurActiveControl === 'function') blurActiveControl();
   if (typeof splashState !== 'undefined') splashState.active = false;
   // FIRST: stop current game and clear screen
   stopCurrentGame();
@@ -22771,6 +22772,11 @@ function updateDonkeyKongGame() {
     // Handled inside climb functions
   } else if (m.state === 'jump') {
     m.x += m.vx;
+    if (m.currentGirder === 6) {
+      m.x = Math.max(94, Math.min(146, m.x));
+    } else {
+      m.x = Math.max(18, Math.min(222, m.x));
+    }
     m.y += m.vy;
     m.vy += 0.28;
     const floorY = getGirderY(m.x, m.currentGirder) - 6;
@@ -25898,6 +25904,7 @@ function insertCoin() {
 
 function start1P() {
   initAudio();
+  if (typeof blurActiveControl === 'function') blurActiveControl();
   playArcadeSfx('START');
   if (activeGame === 'pacman') {
     ensurePastBoot();
@@ -26411,18 +26418,34 @@ function updateAudioPill() {
   pill.style.color = armed ? '#00ff66' : '#9bb0ba';
 }
 window.addEventListener('pointerdown', () => setTimeout(updateAudioPill, 60), { passive: true });
+function blurActiveControl() {
+  if (typeof document !== 'undefined' && document.activeElement &&
+      document.activeElement !== document.body &&
+      typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+}
 if (typeof document.addEventListener === 'function') {
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('div[onclick], span[onclick]').forEach((el) => {
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
       if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
       el.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') {
+        if (ev.key === 'Enter' || (ev.key === ' ' && currentMode !== 'arcade')) {
           ev.preventDefault();
+          ev.stopPropagation();
           el.click();
+          if (typeof el.blur === 'function') el.blur();
         }
       });
     });
+  });
+  // Release focus after mouse clicks on buttons/cards so Space/Enter never re-triggers them during gameplay
+  document.addEventListener('click', (ev) => {
+    if (ev.detail > 0 && ev.target && typeof ev.target.closest === 'function') {
+      const ctrl = ev.target.closest('button, [role="button"], .arcade-card, .ctrl-btn, .synth-opt-btn');
+      if (ctrl && typeof ctrl.blur === 'function') ctrl.blur();
+    }
   });
 }
 
